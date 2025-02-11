@@ -3,7 +3,7 @@ from telegram.ext import ContextTypes
 from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.config.config import config
 from data.ConfigKeys import ConfigKeys as configkey
-from .base import AdminBaseHandler
+from ..base import AdminBaseHandler
 
 class AdminModerationHandler(AdminBaseHandler):
     """管理员审核设置处理器"""

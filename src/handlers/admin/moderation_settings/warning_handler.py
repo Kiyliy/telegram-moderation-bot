@@ -3,7 +3,7 @@ from telegram.ext import ContextTypes
 from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.config.config import config
 from data.ConfigKeys import ConfigKeys as configkey
-from .base import AdminBaseHandler
+from ..base import AdminBaseHandler
 from src.core.registry.MessageFilters import MessageFilters
 from src.core.registry.MessageRegistry import MessageRegistry
 import re
