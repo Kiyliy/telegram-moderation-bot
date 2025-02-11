@@ -1,10 +1,11 @@
 from telegram import Update
 from telegram.ext import filters, ContextTypes
 # from telegram.ext import ApplicationHandlerStop
-from typing import List, Pattern, Callable, Tuple
+from typing import List, Pattern, Callable, Tuple, Dict
 from src.core.registry.registry_base import Registry_Base  # 导入基础注册器
 import re
 import traceback
+
 
 class MessageRegistry:
     _instance = None
@@ -14,6 +15,7 @@ class MessageRegistry:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
+
 
     @classmethod
     def register(cls, message_filter: Callable = None):
@@ -41,8 +43,18 @@ class MessageRegistry:
             pass
         """
         def decorator(func: Callable):
+            # 获取处理器信息
+            handler_name = func.__name__
+            class_name = func.__qualname__.split('.')[0]
+            
+            # 提取过滤器信息
+            if hasattr(message_filter, '__closure__') and message_filter.__closure__:
+                for cell in message_filter.__closure__:
+                    contents = cell.cell_contents
+                # 打印出来
+            print(f"[Register] {class_name}.{handler_name} -> {contents}")
+
             async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-                # 获取函数所属的类名
                 if hasattr(func, '__qualname__'):
                     class_name = func.__qualname__.split('.')[0]
                     # 从 Registry 获取实例

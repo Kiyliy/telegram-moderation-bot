@@ -18,7 +18,7 @@ class MessageHandler(BaseHandler):
         else:
             await update.message.reply_text("Started without parameter")
 
-    @MessageRegistry.register(MessageFilters.match_regex(r"^/help"))
+    @MessageRegistry.register(MessageFilters.match_regex(r"^help"))
     async def handle_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("This is help message")
 
