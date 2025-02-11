@@ -51,21 +51,5 @@ class vipService(UserService, userRedemptionCodes, RedemptionCodeService):
                 f"Unexpected error for user {user_id} using code {code}: {error_message}"
             )
             logger.error(traceback.format_exc())  # 记录完整的堆栈跟踪
-            print(f"Error: {error_message}")  # 控制台打印错误信息
-            print(traceback.format_exc())  # 控制台打印堆栈跟踪
+            print(f"Error: {error_message}, {traceback.format_exc()}")  # 控制台打印错误信息
             return {"success": False, "message": error_message}
-
-
-# 使用示例
-async def example_usage():
-    vip_service = vipService()
-    result = await vip_service.useRedemptionCode("SOMECODE123", 12345)
-    if result["success"]:
-        print(f"Success: {result['message']}")
-    else:
-        print(f"Failed: {result['message']}")
-
-
-# 在异步环境中运行示例
-# import asyncio
-# asyncio.run(example_usage())
