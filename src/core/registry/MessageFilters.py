@@ -1,7 +1,6 @@
 from telegram import Update
 from typing import List
 import re
-import traceback
 
 class MessageFilters:
     COMMANDS = []  # 存储所有注册的命令

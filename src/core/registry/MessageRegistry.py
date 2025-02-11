@@ -1,9 +1,8 @@
 from telegram import Update
-from telegram.ext import filters, ContextTypes
+from telegram.ext import ContextTypes
 # from telegram.ext import ApplicationHandlerStop
-from typing import List, Pattern, Callable, Tuple, Dict
+from typing import List, Callable, Tuple
 from src.core.registry.registry_base import Registry_Base  # 导入基础注册器
-import re
 import traceback
 
 
