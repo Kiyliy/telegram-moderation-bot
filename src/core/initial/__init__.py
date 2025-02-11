@@ -7,7 +7,7 @@ def initialize():
     
     # 动态导入 handlers 包下的所有模块
     for _, module_name, _ in pkgutil.iter_modules(handlers.__path__):
-        print(f"Loading handler module: {module_name}")
+        print(f"[Loading] handler module: {module_name}")
         __import__(f'src.handlers.{module_name}', fromlist=[''])
     
     print("Initialization completed")
