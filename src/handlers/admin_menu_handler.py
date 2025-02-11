@@ -139,6 +139,34 @@ class AdminMenuHandler(BaseHandler):
             await query.answer(f"已{'启用' if self.moderation_rules[rule] else '禁用'} {rule.upper()} 规则")
             await self.handle_rules_settings(update, context)
 
+    @CallbackRegistry.register(r"^admin:settings:sensitivity$")
+    async def handle_sensitivity_settings(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理敏感度设置回调"""
+        query = update.callback_query
+        if not self._is_admin(query.from_user.id):
+            await query.answer("⚠️ 没有权限", show_alert=True)
+            return
+
+        # 显示当前所有规则的敏感度
+        text = "🎚 当前敏感度设置：\n\n"
+        keyboard = []
+        
+        # 显示每个规则的当前敏感度值和调整按钮
+        for rule, value in self.sensitivity.items():
+            text += f"{rule.upper()}: {value:.2f}\n"
+            keyboard.append([InlineKeyboardButton(
+                f"调整 {rule.upper()} 敏感度",
+                callback_data=f"admin:settings:sensitivity:adjust:{rule}"
+            )])
+
+        keyboard.append([InlineKeyboardButton("« 返回设置", callback_data="admin:settings")])
+        
+        await self._safe_edit_message(
+            query,
+            text,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
     @CallbackRegistry.register(r"^admin:settings:sensitivity:adjust:(\w+)$")
     async def handle_sensitivity_adjust(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理敏感度调整"""
@@ -155,27 +183,50 @@ class AdminMenuHandler(BaseHandler):
             
             # 添加微调按钮
             adjustments = [
-                (-0.1, "➖0.1"), 
+                ( 0.05, "➕0.05"),
                 (-0.05, "➖0.05"), 
-                (0.05, "➕0.05"), 
-                (0.1, "➕0.1")
+                (-0.1 , "➖0.1" ), 
+                ( 0.1 , "➕0.1")
             ]
             
+            # 添加调整按钮（每行两个）
+            row = []
             for adj_value, label in adjustments:
                 new_value = round(current_value + adj_value, 2)
                 if 0 <= new_value <= 1:  # 确保值在有效范围内
-                    keyboard.append([InlineKeyboardButton(
+                    row.append(InlineKeyboardButton(
                         label,
                         callback_data=f"admin:settings:sensitivity:set:{rule}:{new_value}"
-                    )])
+                    ))
+                if len(row) == 2:
+                    keyboard.append(row)
+                    row = []
+            if row:  # 如果还有剩余的按钮
+                keyboard.append(row)
+            
+            # 添加直接设置的按钮
+            presets = [(0.3, "低"), (0.5, "中"), (0.7, "高"), (0.9, "严格")]
+            row = []
+            for value, label in presets:
+                row.append(InlineKeyboardButton(
+                    label,
+                    callback_data=f"admin:settings:sensitivity:set:{rule}:{value}"
+                ))
+                if len(row) == 2:
+                    keyboard.append(row)
+                    row = []
+            if row:
+                keyboard.append(row)
             
             keyboard.append([InlineKeyboardButton("« 返回", callback_data="admin:settings:sensitivity")])
             
             await self._safe_edit_message(
                 query,
                 f"🎚 调整 {rule.upper()} 敏感度\n"
-                f"当前值: {current_value:.2f}\n"
-                f"点击按钮调整数值 (0-1)：",
+                f"当前值: {current_value:.2f}\n\n"
+                f"• 使用 ➕/➖ 按钮微调\n"
+                f"• 或选择预设等级\n"
+                f"（0 最宽松，1 最严格）",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
 
@@ -200,7 +251,8 @@ class AdminMenuHandler(BaseHandler):
             config.set_config(config_key, new_value)
             
             await query.answer(f"已将 {rule.upper()} 敏感度设置为 {new_value:.2f}")
-            await self.handle_sensitivity_adjust(update, context)  # 返回调整界面
+            # 返回到调整界面，显示新的值
+            await self.handle_sensitivity_adjust(update, context)
 
     @CallbackRegistry.register(r"^admin:refresh$")
     async def handle_refresh(self, update: Update, context: ContextTypes.DEFAULT_TYPE):

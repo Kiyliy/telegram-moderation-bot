@@ -9,14 +9,14 @@
         "settings": {
             "moderation": {
                 "rules": {
-                    "nsfw": true,
+                    "nsfw": false,
                     "violence": true,
                     "political": false,
                     "spam": false
                 },
                 "sensitivity": {
-                    "nsfw": 0.7,
-                    "violence": 0.8,
+                    "nsfw": 0.4,
+                    "violence": 0.55,
                     "political": 0.6,
                     "spam": 0.5
                 },
