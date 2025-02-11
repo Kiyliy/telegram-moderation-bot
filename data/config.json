@@ -16,7 +16,7 @@
                 },
                 "sensitivity": {
                     "nsfw": 0.5,
-                    "violence": 0.3,
+                    "violence": 0.4,
                     "political": 0.6,
                     "spam": 0.5
                 },
