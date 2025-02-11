@@ -60,7 +60,7 @@ class AdminModerationHandler(AdminBaseHandler):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
-        rule = query.data.split(":")[-2]
+        rule = query.data.split(":")[4]
         if rule in self.moderation_rules:
             # 更新内存中的设置
             self.moderation_rules[rule] = not self.moderation_rules[rule]
@@ -177,7 +177,7 @@ class AdminModerationHandler(AdminBaseHandler):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
-        rule = query.data.split(":")[-1]
+        rule = query.data.split(":")[4]
         if rule not in self.sensitivity:
             await query.answer("无效的规则", show_alert=True)
             return

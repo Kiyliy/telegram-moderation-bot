@@ -4,6 +4,9 @@ from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.config.config import config
 from data.ConfigKeys import ConfigKeys as configkey
 from .base import AdminBaseHandler
+from src.core.registry.MessageFilters import MessageFilters
+from src.core.registry.MessageRegistry import MessageRegistry
+import re
 
 class AdminWarningHandler(AdminBaseHandler):
     """管理员警告消息设置处理器"""
@@ -52,6 +55,36 @@ class AdminWarningHandler(AdminBaseHandler):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
+        
+    @MessageRegistry.register(MessageFilters.match_reply_msg_regex(r"✏️ 编辑 (\w+) 警告消息"))
+    async def handle_warning_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理警告消息编辑"""
+        if not self._is_admin(update.effective_user.id):
+            return
+            
+        # 从正则匹配中提取规则名
+        match = re.search(r"✏️ 编辑 (\w+) 警告消息", update.message.reply_to_message.text)
+        if not match:
+            return
+            
+        rule = match.group(1).lower()  # 转小写
+        if rule not in self.warning_messages:
+            return
+            
+        # 更新警告消息
+        new_message = update.message.text
+        self.warning_messages[rule] = new_message
+        config_key = f"bot.settings.warning_messages.{rule}"
+        config.set_config(config_key, new_message)
+        
+        # 发送确认消息
+        await update.message.reply_text(
+            f"✅ {rule.upper()} 警告消息已更新为:\n{new_message}",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("返回警告消息设置", callback_data="admin:settings:warning")
+            ]])
+        )
+
     @CallbackRegistry.register(r"^admin:settings:warning:edit:(\w+)$")
     async def handle_warning_edit(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理编辑警告消息"""
@@ -72,38 +105,13 @@ class AdminWarningHandler(AdminBaseHandler):
             query,
             f"✏️ 编辑 {rule.upper()} 警告消息\n"
             f"当前消息:\n{self.warning_messages[rule]}\n\n"
-            "请直接发送新的警告消息，或点击取消返回。",
+            "请直接引用此消息发送新的警告消息，或点击取消返回。",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("取消", callback_data="admin:settings:warning")
             ]])
         )
 
-    async def handle_warning_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理用户发送的新警告消息"""
-        if not self._is_admin(update.effective_user.id):
-            return
-            
-        if 'editing_warning' not in context.user_data:
-            return
-            
-        rule = context.user_data['editing_warning']
-        new_message = update.message.text
-        
-        # 更新警告消息
-        self.warning_messages[rule] = new_message
-        config_key = f"bot.settings.warning_messages.{rule}"
-        config.set_config(config_key, new_message)
-        
-        # 清除编辑状态
-        del context.user_data['editing_warning']
-        
-        # 发送确认消息
-        await update.message.reply_text(
-            f"✅ {rule.upper()} 警告消息已更新为:\n{new_message}",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("返回警告消息设置", callback_data="admin:settings:warning")
-            ]])
-        )
+
 
 # 初始化处理器
 AdminWarningHandler() 

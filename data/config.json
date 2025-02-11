@@ -9,14 +9,14 @@
         "settings": {
             "moderation": {
                 "rules": {
-                    "nsfw": false,
-                    "violence": true,
+                    "nsfw": true,
+                    "violence": false,
                     "political": false,
-                    "spam": false
+                    "spam": true
                 },
                 "sensitivity": {
                     "nsfw": 0.5,
-                    "violence": 0.4,
+                    "violence": 0.7,
                     "political": 0.6,
                     "spam": 0.5
                 },
@@ -27,10 +27,10 @@
                 }
             },
             "warning_messages": {
-                "nsfw": "⚠️ 您发送的内容包含不适当的内容，已被自动删除。",
+                "nsfw": "你好",
                 "violence": "⚠️ 您发送的内容包含暴力内容，已被自动删除。",
                 "political": "⚠️ 您发送的内容包含敏感内容，已被自动删除。",
-                "spam": "⚠️ 您发送的内容被判定为垃圾信息，已被自动删除。"
+                "spam": "测试"
             },
             "punishment": {
                 "mute_durations": [

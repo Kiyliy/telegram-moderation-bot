@@ -51,6 +51,33 @@ class MessageFilters:
             return False
         
         return filter
+    
+    @staticmethod
+    def match_reply_msg_regex(pattern: str):
+        """
+        匹配被回复消息的正则表达式
+        pattern: 要匹配被回复消息的正则表达式
+        
+        """
+        def filter(update: Update) -> bool:
+            if not update.message or not update.message.reply_to_message:
+                return False
+            
+            # 获取被回复的消息文本
+            reply_msg = update.message.reply_to_message
+            reply_text = reply_msg.text or reply_msg.caption
+            if not reply_text:
+                return False
+                
+            # 检查是否是机器人的消息
+            if not reply_msg.from_user or not reply_msg.from_user.is_bot:
+                return False
+                
+            # 匹配正则
+            return bool(re.search(pattern, reply_text, re.IGNORECASE))
+            
+        return filter
+        
 
     @staticmethod
     def match_media_type(media_types: List[str]):
