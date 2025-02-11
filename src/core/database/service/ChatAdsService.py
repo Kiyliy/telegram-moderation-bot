@@ -1,9 +1,9 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from src.config import config
-from src.core.service.chatsService import ChatService
+from src.core.config.config import config
+from src.core.database.service.chatsService import ChatService
 import random
 import traceback
-from src.core.service.logger import logger
+from src.core.logger import logger
 
 
 class ChatAdsService:

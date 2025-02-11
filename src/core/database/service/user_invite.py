@@ -1,7 +1,7 @@
 # 用户邀请模块, 用于处理用户邀请和奖励
 
 from core.database.db.UserDatabase import UserDatabase
-from src.core.service.delayLogService import FullyMatchedDelayedLoggingSystem
+from src.core.database.service.delayLogService import FullyMatchedDelayedLoggingSystem
 import time
 
 class UserInviteError:

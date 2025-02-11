@@ -1,9 +1,9 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 import asyncio
-from src.core.service.logger import logger
+from src.core.logger import logger
 import traceback
-from src.core.service.messageHistoryService import MessageHistoryService
+from src.core.database.service.messageHistoryService import MessageHistoryService
 import time
 
 
