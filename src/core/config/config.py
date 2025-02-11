@@ -1,11 +1,13 @@
 # src/core/config/config.py
 import json
 from typing import Any, Dict
+import os
 
 class Config:
     """配置管理类"""
     _instance = None
     _config: Dict[str, Any] = {}
+    _config_path = "data/config.json"
 
     def __new__(cls):
         if cls._instance is None:
@@ -18,16 +20,58 @@ class Config:
 
     def _load_config(self) -> None:
         """加载配置文件"""
-        config_path = "data/config.json"
         try:
-            with open(config_path, "r", encoding="utf-8") as f:
+            with open(self._config_path, "r", encoding="utf-8") as f:
                 self._config = json.load(f)
         except FileNotFoundError:
-            print(f"[WARNING] 配置文件不存在: {config_path}")
+            print(f"[WARNING] 配置文件不存在: {self._config_path}")
             self._config = {}
         except json.JSONDecodeError as e:
             print(f"[ERROR] 配置文件格式错误: {e}")
             self._config = {}
+            
+    def _save_config(self) -> None:
+        """写入到配置文件"""
+        try:
+            # 确保目录存在
+            os.makedirs(os.path.dirname(self._config_path), exist_ok=True)
+            
+            # 保存配置
+            with open(self._config_path, "w", encoding="utf-8") as f:
+                json.dump(self._config, f, ensure_ascii=False, indent=4)
+            print("[INFO] 配置已保存")
+        except Exception as e:
+            print(f"[ERROR] 保存配置文件失败: {e}")
+
+    def set_config(self, key: str, value: Any) -> None:
+        """
+        设置配置值
+        
+        Args:
+            key: 配置键，格式如 "database.daily_points"
+            value: 要设置的值
+
+        Example:
+            >>> Config.set_config("database.daily_points", 200)
+        """
+        if self._instance is None:
+            self._instance = self()
+
+        # 按照点号分割键
+        parts = key.split('.')
+        config = self._config
+
+        # 逐层查找并创建必要的字典
+        for part in parts[:-1]:
+            if part not in config:
+                config[part] = {}
+            elif not isinstance(config[part], dict):
+                config[part] = {}
+            config = config[part]
+
+        # 设置最终的值
+        config[parts[-1]] = value
+        self._save_config()
 
     @classmethod
     def get_config(cls, key: str, default: Any = None) -> Any:
