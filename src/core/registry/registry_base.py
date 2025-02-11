@@ -2,7 +2,7 @@ from typing import Dict, Any
 
 
 
-class Registry:
+class Registry_Base:
     _instance = None
     _handlers: Dict[str, Any] = {}  # 使用类名作为key
 

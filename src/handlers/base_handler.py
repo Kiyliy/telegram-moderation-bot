@@ -1,6 +1,5 @@
 
-from src.core.registry.CallbackRegistry import Registry
-
+from src.core.registry.registry_base import Registry_Base
 
 # 元类，用于确保每个类只有一个实例
 class MetaHandler(type):
@@ -16,4 +15,4 @@ class MetaHandler(type):
 class BaseHandler(metaclass=MetaHandler):
     def __init__(self):
         # 在初始化时自动注册
-        Registry.add_handler(self)
+        Registry_Base.add_handler(self)

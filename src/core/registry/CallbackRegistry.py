@@ -3,7 +3,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 import re
 from typing import Callable
-from src.core.registry.registry_base import Registry
+from src.core.registry.registry_base import Registry_Base
 
 
 # 回调注册器
@@ -27,7 +27,7 @@ class CallbackRegistry:
                 if hasattr(func, '__qualname__'):
                     class_name = func.__qualname__.split('.')[0]
                     # 从Registry获取实例
-                    instance = Registry.get_handler(class_name)
+                    instance = Registry_Base.get_handler(class_name)
                     if instance:
                         bound_method = getattr(instance, func.__name__)
                         return await bound_method(*args, **kwargs)

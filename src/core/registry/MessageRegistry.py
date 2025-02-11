@@ -1,64 +1,69 @@
-from typing import Pattern, Callable, List, Tuple
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import filters, ContextTypes
+# from telegram.ext import ApplicationHandlerStop
+from typing import List, Pattern, Callable, Tuple
+from src.core.registry.registry_base import Registry_Base  # 导入基础注册器
 import re
-from src.core.registry.registry_base import Registry
-from src.handlers.base_handler import BaseHandler
-
+import traceback
 
 class MessageRegistry:
-    _instances = {}  # 用字典存储每个类的实例
-    _handlers: List[Tuple[Pattern, Callable]] = []  # 存储所有的处理器
+    _instance = None
+    _handlers: List[Tuple[Callable, Callable]] = []  # [(filter_func, handler_func), ...]
 
     def __new__(cls):
-        if cls not in cls._instances:
-            cls._instances[cls] = super().__new__(cls)
-        return cls._instances[cls]
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     @classmethod
-    def register(cls, pattern: str):
+    def register(cls, message_filter: Callable = None):
         """
         装饰器，用于注册消息处理器
-        pattern: 正则表达式模式，用于匹配消息文本
-        示例：
-        @registry.register(r"^/start")
-        async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        message_filter: 消息过滤器函数
+        pattern: 正则表达式模式（如果提供，会自动创建文本匹配过滤器）
+        
+        使用示例:
+        1. 使用命令过滤器:
+        @MessageRegistry.register(MessageFilters.is_command(['start', 'help']))
+        async def handle_command(self, update, context):
+            pass
+
+        2. 使用正则匹配:
+        @MessageRegistry.register(pattern=r"^我要申诉\s*(?P<id>\d+)?$")
+        async def handle_appeal(self, update, context):
+            match_groups = update.message._match_groups  # 获取正则匹配组
+            appeal_id = match_groups.get('id')
+            pass
+        
+        3. 使用自定义过滤器:
+        @MessageRegistry.register(lambda update: update.message.photo)
+        async def handle_photo(self, update, context):
             pass
         """
-        regex = re.compile(pattern, re.IGNORECASE)  # 默认不区分大小写
-
         def decorator(func: Callable):
-            async def wrapper(*args, **kwargs):
+            async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # 获取函数所属的类名
                 if hasattr(func, '__qualname__'):
                     class_name = func.__qualname__.split('.')[0]
                     # 从 Registry 获取实例
-                    instance = Registry.get_handler(class_name)
+                    instance = Registry_Base.get_handler(class_name)
                     if instance:
-                        # 使用实例调用方法
-                        bound_method = getattr(instance, func.__name__)
-                        return await bound_method(*args, **kwargs)
-                return await func(*args, **kwargs)
+                        method = func.__get__(instance, instance.__class__)  # 创建绑定方法
+                        return await method(update, context)
+                return await func(update, context)
             
-            cls._handlers.append((regex, wrapper))
+            cls._handlers.append((message_filter, wrapper))
             return func
         return decorator
 
     @classmethod
     async def dispatch(cls, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """分发消息到对应的处理器"""
-        if not update.message or (not update.message.text and not update.message.caption):
-            return
-
-        text = update.message.text or update.message.caption
-        
-        for pattern, handler in cls._handlers:
-            match = pattern.match(text)
-            if match:
-                try:
-                    # 将正则匹配的分组作为关键字参数传递给处理器
-                    kwargs = match.groupdict()
-                    await handler(update, context, **kwargs)
+        for filter_func, handler in cls._handlers:
+            try:
+                if filter_func and filter_func(update):
+                    await handler(update, context)
                     return
-                except Exception as e:
-                    print(f"Error handling message: {e}")
+            except Exception as e:
+                print(f"Error in message handler: {e}, {traceback.format_exc()}")
+        print("[DEV] No handler found for update:", update)
