@@ -51,7 +51,7 @@ class MessageRegistry:
                 for cell in message_filter.__closure__:
                     contents = cell.cell_contents
                 # 打印出来
-            print(f"[Register] {class_name}.{handler_name} -> {contents}")
+                print(f"[Register] {class_name}.{handler_name} -> {contents}")
 
             async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if hasattr(func, '__qualname__'):
