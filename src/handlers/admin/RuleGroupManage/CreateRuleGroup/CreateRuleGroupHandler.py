@@ -111,7 +111,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
                 "2. 配置规则组的审核设置\n"
                 "3. 查看规则组统计信息",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("配置规则组", callback_data=f"admin:rg:{rule_group.id}")
+                    InlineKeyboardButton("配置规则组", callback_data=f"admin:rg:{rule_group.rule_id}")
                 ]])
             )
         else:

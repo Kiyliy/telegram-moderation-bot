@@ -21,27 +21,28 @@ class EditRuleGroupMenuHanlder(AdminBaseHandler):
             [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:list:0")]
         ])
         
-    @CallbackRegistry.register(r"^admin:rg:.{16}$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}(:menu)?$")
     async def handle_admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理规则组编辑主菜单"""
         query: CallbackQuery = update.callback_query
-        rule_id = query.data.split(":")[-1]
+        rule_id = query.data.split(":")[2]
         if not query or not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 抱歉，您没有管理员权限。")
             return
 
         await query.edit_message_text(
+            f"EditRuleGroupMenu"
             f"👋 欢迎使用规则组控制面板\n"
             f"当前的规则组编号: {rule_id}\n"
             f"请选择以下功能：",
             reply_markup=self._get_admin_main_menu(rule_id)
         )
 
-    @CallbackRegistry.register(r"^admin:rg:.{16}:moderation$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:moderation(:menu)?$")
     async def handle_settings(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理审核设置回调"""
         query = update.callback_query
-        rule_id = query.data.split(":")[3]
+        rule_id = query.data.split(":")[2]
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
@@ -66,7 +67,7 @@ class EditRuleGroupMenuHanlder(AdminBaseHandler):
     async def handle_refresh(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理刷新设置回调"""
         query = update.callback_query
-        rule_id = query.data.split(":")[3]
+        rule_id = query.data.split(":")[2]
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
