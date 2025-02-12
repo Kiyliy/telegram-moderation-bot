@@ -1,8 +1,10 @@
 from typing import Optional, List, Dict, Tuple
 from src.core.database.models.db_userWarningStatus import UserWarningStatus
 from src.core.database.models.db_userViolation import UserViolation
+from src.core.database.models.db_moderation_log import ModerationLog
 from src.core.database.service.ViolationService import ViolationService
 from src.core.database.service.WarningService import WarningService
+from src.core.database.service.ModerationLogService import ModerationLogService
 
 
 class UserModerationService:
@@ -11,6 +13,7 @@ class UserModerationService:
     def __init__(self):
         self.warning_service = WarningService()
         self.violation_service = ViolationService()
+        self.moderation_log_service = ModerationLogService()
         
     async def record_violation(
         self,
@@ -19,7 +22,10 @@ class UserModerationService:
         violation_type: str,
         message_id: Optional[int] = None,
         content: Optional[str] = None,
-        operator_id: Optional[int] = None
+        content_type: str = "text",
+        operator_id: Optional[int] = None,
+        is_auto: bool = True,
+        confidence: Optional[float] = None
     ) -> Tuple[UserViolation, UserWarningStatus, str, Optional[int]]:
         """
         记录违规并更新警告状态
@@ -40,6 +46,21 @@ class UserModerationService:
             action=action,
             duration=duration,
             operator_id=operator_id
+        )
+        
+        # 记录审核日志
+        await self.moderation_log_service.add_moderation_log(
+            user_id=user_id,
+            chat_id=chat_id,
+            message_id=message_id,
+            content=content,
+            content_type=content_type,
+            violation_type=violation_type,
+            action=action,
+            action_duration=duration,
+            operator_id=operator_id,
+            is_auto=is_auto,
+            confidence=confidence
         )
         
         return violation, status, action, duration
