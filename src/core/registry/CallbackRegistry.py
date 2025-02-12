@@ -21,6 +21,8 @@ class CallbackRegistry:
         regex = re.compile(pattern)
         
         def decorator(func: Callable):
+            print(f"[Register] {func.__qualname__} -> {pattern}")
+            
             async def wrapper(*args, **kwargs):
                 # 获取函数所属的类名
                 if hasattr(func, '__qualname__'):
