@@ -2,151 +2,162 @@ import os
 import mysql.connector
 from src.core.logger import logger
 import aiomysql
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Union, Optional
 import traceback
 from src.core.database.models.db_log import UserLogsEntry
 import json
+from src.core.database.db.base_database import BaseDatabase
 
 
-class UserLogsDatabase:
-    def __init__(self, table_name: str) -> None:
-        self.DB_CONFIG = {
-            "host": os.getenv("DB_HOST"),
-            "user": os.getenv("DB_APP_USER"),
-            "password": os.getenv("DB_APP_USER_PASSWORD"),
-            "db": os.getenv("DB_APP_NAME"),
-            "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", 10)),
-        }
-        self.table_name = table_name
-        # 不是调试模式, 才创建表
-        if os.getenv("DEBUG", "False") != "True":
+class UserLogsDatabase(BaseDatabase):
+    """用户日志数据库操作类"""
+    
+    def __init__(self):
+        super().__init__()
+        self.table_name = "user_logs"
+        if os.getenv("SKIP_DB_INIT", "False") != "True":
             self._create_table()
-
-    def _create_table(self):
+        
+    def _create_table(self) -> None:
+        """创建表"""
+        sql = f"""
+        CREATE TABLE IF NOT EXISTS {self.table_name} (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            session_id VARCHAR(255) UNIQUE,
+            user_id BIGINT NOT NULL,
+            chat_id BIGINT,
+            message_id BIGINT,
+            log_type TEXT NOT NULL,
+            user_message TEXT,
+            msg_history TEXT,
+            bot_response TEXT,
+            caption TEXT,
+            point_change JSON,
+            vip_days_change INT,
+            extra_data JSON,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_user_id (user_id),
+            INDEX idx_chat_id (chat_id),
+            INDEX idx_created_at (created_at)
+        )
         """
-        创建表
-        """
+        self.execute(sql)
+        
+    def _safe_json_dumps(self, data: Union[str, Dict[str, Any], None]) -> Optional[str]:
+        """安全地将数据转换为JSON字符串"""
+        if data is None:
+            return None
+        if isinstance(data, str):
+            return data
         try:
-            with mysql.connector.connect(**self.DB_CONFIG) as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        f"""
-                        CREATE TABLE IF NOT EXISTS {self.table_name} (
-                            id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                            session_id VARCHAR(255) UNIQUE,
-                            user_id BIGINT NOT NULL,
-                            chat_id BIGINT,
-                            message_id BIGINT,
-                            log_type TEXT NOT NULL,
-                            user_message TEXT,
-                            msg_history TEXT,
-                            bot_response TEXT,
-                            caption TEXT,
-                            point_change JSON,
-                            vip_days_change INT,
-                            extra_data JSON,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                            INDEX idx_user_id (user_id),
-                            INDEX idx_chat_id (chat_id),
-                            INDEX idx_created_at (created_at)
-                        )
-                    """
-                    )
-                conn.commit()
-        except Exception as err:
-            logger.error(
-                f"An error occurred while creating table: {err}", exc_info=True
+            return json.dumps(data, ensure_ascii=False)
+        except:
+            return str(data)
+        
+    async def insert_logs(self, log_entries: List[UserLogsEntry]) -> Dict[str, Any]:
+        """批量插入日志"""
+        sql = f"""
+        INSERT INTO {self.table_name} (
+            user_id, chat_id, message_id, session_id, log_type, 
+            user_message, msg_history, bot_response, caption, 
+            point_change, vip_days_change, extra_data
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        values = [
+            (
+                entry.user_id,
+                entry.chat_id,
+                entry.message_id,
+                entry.session_id,
+                self._safe_json_dumps(entry.log_type),
+                self._safe_json_dumps(entry.user_message),
+                self._safe_json_dumps(entry.msg_history),
+                self._safe_json_dumps(entry.bot_response),
+                self._safe_json_dumps(entry.caption),
+                self._safe_json_dumps(entry.point_change),
+                entry.vip_days_change,
+                self._safe_json_dumps(entry.extra_data),
             )
-            print(f"An error occurred while creating table: {traceback.format_exc()}")
-
-    async def insert_logs(self, log_entries: List[UserLogsEntry]) -> bool:
+            for entry in log_entries
+        ]
+        
+        success_count = 0
+        for value in values:
+            result = await self.execute_async(sql, value)
+            if result:
+                success_count += 1
+                
+        return self.format_result(
+            bool(success_count),
+            f"Inserted {success_count} of {len(log_entries)} logs",
+            {"success_count": success_count, "total": len(log_entries)}
+        )
+        
+    async def insert_log(self, log_entry: UserLogsEntry) -> Dict[str, Any]:
+        """插入单条日志"""
+        sql = f"""
+        INSERT INTO {self.table_name} (
+            user_id, chat_id, session_id, log_type, user_message, 
+            msg_history, bot_response, caption, point_change, 
+            vip_days_change, extra_data
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        param: session_id: str
-        param: user_id
-        param: chat_id
-        param: message_id
-        param: log_type: Literal: ["消费","兑换","系统","其它","签到"]
-        param: user_message
-        param: msg_history
-        param: bot_response
-        param: caption
-        param: point_change : dict
-        param: vip_days_change: int
-        param: extra_data: dict
-        return bool
+        values = (
+            log_entry.user_id,
+            log_entry.chat_id,
+            log_entry.session_id,
+            log_entry.log_type,
+            log_entry.user_message,
+            log_entry.msg_history,
+            log_entry.bot_response,
+            log_entry.caption,
+            self._safe_json_dumps(log_entry.point_change),
+            log_entry.vip_days_change,
+            self._safe_json_dumps(log_entry.extra_data),
+        )
+        result = await self.execute_async(sql, values)
+        return self.format_result(
+            bool(result),
+            f"Log {'inserted' if result else 'failed to insert'}",
+            {"id": result} if result else None
+        )
+        
+    async def get_user_logs(
+        self, 
+        user_id: int, 
+        limit: int = 10
+    ) -> List[UserLogsEntry]:
+        """获取用户日志"""
+        sql = f"""
+        SELECT * FROM {self.table_name}
+        WHERE user_id = %s
+        ORDER BY created_at DESC
+        LIMIT %s
         """
-
-        def safe_json_dumps(data: Union[str, Dict[str, Any], None]) -> Union[str, None]:
-            if data is None:
-                return None
-            if isinstance(data, str):
-                return data
-            try:
-                return json.dumps(data, ensure_ascii=False)
-            except:
-                return str(data)
-
-        query = f"""
-        INSERT INTO {self.table_name} (user_id, chat_id, message_id, session_id, log_type, user_message, msg_history, bot_response, 
-                               caption, point_change, vip_days_change, extra_data)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        rows = await self.fetch_all(sql, (user_id, limit))
+        return [UserLogsEntry.from_list(row) for row in rows]
+        
+    async def get_chat_logs(
+        self, 
+        chat_id: int, 
+        limit: int = 10
+    ) -> List[UserLogsEntry]:
+        """获取群组日志"""
+        sql = f"""
+        SELECT * FROM {self.table_name}
+        WHERE chat_id = %s
+        ORDER BY created_at DESC
+        LIMIT %s
         """
-        try:
-            async with aiomysql.connect(**self.DB_CONFIG) as conn:
-                async with conn.cursor() as cur:
-                    values = [
-                        (
-                            entry.user_id,
-                            entry.chat_id,
-                            entry.message_id,
-                            entry.session_id,
-                            safe_json_dumps(entry.log_type),
-                            safe_json_dumps(entry.user_message),
-                            safe_json_dumps(entry.msg_history),
-                            safe_json_dumps(entry.bot_response),
-                            safe_json_dumps(entry.caption),
-                            safe_json_dumps(entry.point_change),
-                            entry.vip_days_change,
-                            safe_json_dumps(entry.extra_data),
-                        )
-                        for entry in log_entries
-                    ]
-                    await cur.executemany(query, values)
-                    await conn.commit()
-            return True
-        except Exception as e:
-            logger.error(f"Error inserting logs: {str(e)}", exc_info=True)
-            print(f"Error inserting logs: {traceback.format_exc()},{log_entries}")
-            return False
-
-    async def insert_log(self, log_entry: UserLogsEntry) -> int:
-        query = f"""
-        INSERT INTO {self.table_name} (user_id, chat_id, session_id, log_type, user_message, msg_history, bot_response, 
-                               caption, point_change, vip_days_change, extra_data)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        rows = await self.fetch_all(sql, (chat_id, limit))
+        return [UserLogsEntry.from_list(row) for row in rows]
+        
+    async def get_session_logs(self, session_id: str) -> Optional[UserLogsEntry]:
+        """获取会话日志"""
+        sql = f"""
+        SELECT * FROM {self.table_name}
+        WHERE session_id = %s
         """
-        try:
-            async with aiomysql.connect(**self.DB_CONFIG) as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute(
-                        query,
-                        (
-                            log_entry.user_id,
-                            log_entry.chat_id,
-                            log_entry.session_id,
-                            log_entry.log_type,
-                            log_entry.user_message,
-                            log_entry.msg_history,
-                            log_entry.bot_response,
-                            log_entry.caption,
-                            json.dumps(log_entry.point_change),
-                            log_entry.vip_days_change,
-                            json.dumps(log_entry.extra_data),
-                        ),
-                    )
-                    await conn.commit()
-                    return cur.lastrowid
-        except Exception as err:
-            logger.error(f"An error occurred while insert a log: {err}", exc_info=True)
-            print(f"An error occurred while insert a log: {traceback.format_exc()}")
+        row = await self.fetch_one(sql, (session_id,))
+        return UserLogsEntry.from_list(row) if row else None

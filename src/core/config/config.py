@@ -43,7 +43,8 @@ class Config:
         except Exception as e:
             print(f"[ERROR] 保存配置文件失败: {e}")
 
-    def set_config(self, key: str, value: Any) -> None:
+    @classmethod
+    def set_config(cls, key: str, value: Any) -> None:
         """
         设置配置值
         
@@ -54,12 +55,12 @@ class Config:
         Example:
             >>> Config.set_config("database.daily_points", 200)
         """
-        if self._instance is None:
-            self._instance = self()
+        if cls._instance is None:
+            cls._instance = cls()
 
         # 按照点号分割键
         parts = key.split('.')
-        config = self._config
+        config = cls._instance._config
 
         # 逐层查找并创建必要的字典
         for part in parts[:-1]:
@@ -71,7 +72,7 @@ class Config:
 
         # 设置最终的值
         config[parts[-1]] = value
-        self._save_config()
+        cls._instance._save_config()
 
     @classmethod
     def get_config(cls, key: str, default: Any = None) -> Any:

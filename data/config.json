@@ -1,6 +1,7 @@
 {
     "database": {
-        "daily_points": 100
+        "daily_points": 100,
+        "permanent_points": 1000
     },
     "bot": {
         "admin_ids": [

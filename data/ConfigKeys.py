@@ -1,6 +1,7 @@
 class ConfigKeys:
     class database:
         DAILY_POINTS: str = 'database.daily_points'
+        PERMANENT_POINTS: str = 'database.permanent_points'
     
     class bot:
         ADMIN_IDS: str = 'bot.admin_ids'

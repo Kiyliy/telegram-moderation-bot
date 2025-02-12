@@ -1,195 +1,154 @@
-import aiomysql
-import traceback
-from src.core.logger import logger
-from typing import Optional
-import os
-import mysql.connector
+from typing import Dict, Any, Optional, List
 from src.core.database.models.db_chat import ChatInfo
+from src.core.database.db.base_database import BaseDatabase
+import os
 
 
-class ChatDatabase:
-    def __init__(self) -> None:
-        self.DB_CONFIG = {
-            "host": os.getenv("DB_HOST"),
-            "user": os.getenv("DB_APP_USER"),
-            "password": os.getenv("DB_APP_USER_PASSWORD"),
-            "db": os.getenv("DB_APP_NAME"),
-            "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", 10)),
-        }
-        # 不是调试模式, 才创建表
-        if os.getenv("DEBUG", "False") != "True":
-            self.create_chats_table()
-
-    def create_chats_table(self):
-        try:
-            conn = mysql.connector.connect(**self.DB_CONFIG)
-            cursor = conn.cursor()
-
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS chats (
-                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                    chat_id BIGINT NOT NULL UNIQUE,
-                    chat_type ENUM('private', 'group', 'supergroup', 'channel') NOT NULL,
-                    title VARCHAR(255),
-                    owner_id BIGINT,
-                    ads TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    INDEX idx_owner_id (owner_id),
-                    INDEX idx_chat_type (chat_type)
-                )
-            """
-            )
-            conn.commit()
-            cursor.close()
-            conn.close()
-            logger.info("Chats table created successfully.")
-        except Exception as e:
-            logger.error(f"Error creating chats table: {str(e)}", exc_info=True)
-            print(f"Error creating chats table: {str(e)}\n{traceback.format_exc()}")
-
+class ChatDatabase(BaseDatabase):
+    """群组数据库操作类"""
+    
+    def __init__(self):
+        super().__init__()
+        self.table_name = "chats"
+        if os.getenv("SKIP_DB_INIT", "False") != "True":
+            self._create_table()
+        
+    def _create_table(self) -> None:
+        """创建表"""
+        sql = f"""
+        CREATE TABLE IF NOT EXISTS {self.table_name} (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            chat_id BIGINT NOT NULL UNIQUE,
+            chat_type ENUM('private', 'group', 'supergroup', 'channel') NOT NULL,
+            title VARCHAR(255),
+            owner_id BIGINT,
+            ads TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_owner_id (owner_id),
+            INDEX idx_chat_type (chat_type)
+        )
+        """
+        self.execute(sql)
+        
     async def add_chat(
-        self, chat_id: int, chat_type: str, title: str = None, owner_id: int = None
-    ) -> dict:
-        try:
-            async with aiomysql.connect(**self.DB_CONFIG) as conn:
-                async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        "INSERT INTO chats (chat_id, chat_type, title, owner_id) VALUES (%s, %s, %s, %s)",
-                        (chat_id, chat_type, title, owner_id),
-                    )
-                    await conn.commit()
-                    return {"success": True, "message": "Chat added successfully"}
-        except Exception as e:
-            logger.error(f"Error adding chat {chat_id}: {str(e)}", exc_info=True)
-            print(f"Error adding chat {chat_id}: {str(e)}\n{traceback.format_exc()}")
-            return {"success": False, "message": f"Error: {str(e)}"}
-
+        self,
+        chat_id: int,
+        chat_type: str,
+        title: Optional[str] = None,
+        owner_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """添加群组"""
+        sql = f"""
+        INSERT INTO {self.table_name} (
+            chat_id, chat_type, title, owner_id
+        ) VALUES (%s, %s, %s, %s)
+        """
+        result = await self.execute_async(sql, (chat_id, chat_type, title, owner_id))
+        return self.format_result(
+            bool(result),
+            f"Chat {chat_id} {'added' if result else 'failed to add'}"
+        )
+        
     async def update_chat_info(
-        self, chat_id: int, chat_type: str, title: str = None
-    ) -> dict:
-        try:
-            async with aiomysql.connect(**self.DB_CONFIG) as conn:
-                async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        "UPDATE chats SET chat_type = %s, title = %s WHERE chat_id = %s",
-                        (chat_type, title, chat_id),
-                    )
-                    await conn.commit()
-                    return {"success": True, "message": "Chat updated successfully"}
-        except Exception as e:
-            logger.error(f"Error updating chat {chat_id}: {str(e)}", exc_info=True)
-            print(f"Error updating chat {chat_id}: {str(e)}\n{traceback.format_exc()}")
-            return {"success": False, "message": f"Error: {str(e)}"}
-
-    async def bind_group_to_user(self, group_id: int, user_id: int) -> dict:
-        try:
-            async with aiomysql.connect(**self.DB_CONFIG) as conn:
-                async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        "UPDATE chats SET owner_id = %s WHERE chat_id = %s",
-                        (user_id, group_id),
-                    )
-                    await conn.commit()
-                    return {"success": True, "message": "Group bound to user successfully"}
-        except Exception as e:
-            logger.error(f"Error binding group {group_id} to user {user_id}: {str(e)}", exc_info=True)
-            print(f"Error binding group {group_id} to user {user_id}: {str(e)}\n{traceback.format_exc()}")
-            return {"success": False, "message": f"Error: {str(e)}"}
-
-    async def unbind_group_from_user(self, group_id: int, user_id: int) -> dict:
-        try:
-            async with aiomysql.connect(**self.DB_CONFIG) as conn:
-                async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        "UPDATE chats SET owner_id = %s WHERE chat_id = %s",
-                        (None, group_id),
-                    )
-                    await conn.commit()
-                    return {"success": True, "message": "Group unbound from user successfully"}
-        except Exception as e:
-            logger.error(f"Error unbinding group {group_id} from user {user_id}: {str(e)}", exc_info=True)
-            print(f"Error unbinding group {group_id} from user {user_id}: {str(e)}\n{traceback.format_exc()}")
-            return {"success": False, "message": f"Error: {str(e)}"}
-
-    async def get_owner_groups(self, user_id: int) -> list:
-        try:
-            async with aiomysql.connect(**self.DB_CONFIG) as conn:
-                async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        "SELECT * FROM chats WHERE owner_id = %s", (user_id,)
-                    )
-                    groups = await cursor.fetchall()
-                    return groups
-        except Exception as e:
-            logger.error(f"Error fetching groups for user {user_id}: {str(e)}", exc_info=True)
-            print(f"Error fetching groups for user {user_id}: {str(e)}\n{traceback.format_exc()}")
-
-    async def update_chat_ads(self, chat_id: int, ads: str) -> dict:
-        def _str_json(ads: str) -> str:
-            """
-            因为json不支持单引号, 所以需要将单引号转换为双引号
-            """
-            ads = str(ads) if ads else None
-            ads_str = ads.replace("'", '"')
-            return ads_str
-
-        ads = _str_json(ads)
-        try:
-            async with aiomysql.connect(**self.DB_CONFIG) as conn:
-                async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        "UPDATE chats SET ads = %s WHERE chat_id = %s", (ads, chat_id)
-                    )
-                    await conn.commit()
-                    return {"success": True, "message": "Chat ads updated successfully"}
-        except Exception as e:
-            logger.error(f"Error updating chat ads {chat_id}: {str(e)}", exc_info=True)
-            print(
-                f"Error updating chat ads {chat_id}: {str(e)}\n{traceback.format_exc()}"
-            )
-            return {"success": False, "message": f"Error: {str(e)}"}
-
-    async def get_chats_by_owner(self, owner_id: int) -> list:
-        try:
-            async with aiomysql.connect(**self.DB_CONFIG) as conn:
-                async with conn.cursor(aiomysql.DictCursor) as cursor:
-                    await cursor.execute(
-                        "SELECT * FROM chats WHERE owner_id = %s", (owner_id,)
-                    )
-                    chats = await cursor.fetchall()
-                    return chats
-        except Exception as e:
-            logger.error(
-                f"Error fetching chats for owner {owner_id}: {str(e)}", exc_info=True
-            )
-            print(
-                f"Error fetching chats for owner {owner_id}: {str(e)}\n{traceback.format_exc()}"
-            )
-            return []
-
-    async def get_chat_info(self, chat_id: int) -> Optional[ChatInfo]:
+        self,
+        chat_id: int,
+        chat_type: str,
+        title: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """更新群组信息"""
+        sql = f"""
+        UPDATE {self.table_name} 
+        SET chat_type = %s, title = %s 
+        WHERE chat_id = %s
         """
-        返回 chat_info对象 或 None
+        result = await self.execute_async(sql, (chat_type, title, chat_id))
+        return self.format_result(
+            bool(result),
+            f"Chat {chat_id} {'updated' if result else 'failed to update'}"
+        )
+        
+    async def bind_group_to_user(
+        self,
+        group_id: int,
+        user_id: int
+    ) -> Dict[str, Any]:
+        """绑定群组到用户"""
+        sql = f"""
+        UPDATE {self.table_name} 
+        SET owner_id = %s 
+        WHERE chat_id = %s
         """
-        try:
-            async with aiomysql.connect(**self.DB_CONFIG) as conn:
-                async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        "SELECT * FROM chats WHERE chat_id = %s", (chat_id,)
-                    )
-                    row = await cursor.fetchone()
-                    if row:
-                        return ChatInfo.from_list(row)
-                    else:
-                        return None
-        except Exception as e:
-            logger.error(
-                f"Error fetching chat info for chat_id {chat_id}: {str(e)}",
-                exc_info=True,
-            )
-            print(
-                f"Error fetching chat info for chat_id {chat_id}: {str(e)}\n{traceback.format_exc()}"
-            )
+        result = await self.execute_async(sql, (user_id, group_id))
+        return self.format_result(
+            bool(result),
+            f"Group {group_id} {'bound' if result else 'failed to bind'} to user {user_id}"
+        )
+        
+    async def unbind_group_from_user(
+        self,
+        group_id: int,
+        user_id: int
+    ) -> Dict[str, Any]:
+        """解绑群组"""
+        sql = f"""
+        UPDATE {self.table_name} 
+        SET owner_id = NULL 
+        WHERE chat_id = %s AND owner_id = %s
+        """
+        result = await self.execute_async(sql, (group_id, user_id))
+        return self.format_result(
+            bool(result),
+            f"Group {group_id} {'unbound' if result else 'failed to unbind'} from user {user_id}"
+        )
+        
+    async def get_owner_groups(self, user_id: int) -> List[ChatInfo]:
+        """获取用户拥有的群组"""
+        sql = f"""
+        SELECT * FROM {self.table_name}
+        WHERE owner_id = %s
+        """
+        rows = await self.fetch_all(sql, (user_id,))
+        return [ChatInfo.from_list(row) for row in rows]
+        
+    def _str_json(self, ads: Optional[str]) -> Optional[str]:
+        """将单引号转换为双引号"""
+        if not ads:
             return None
+        return str(ads).replace("'", '"')
+        
+    async def update_chat_ads(
+        self,
+        chat_id: int,
+        ads: Optional[str]
+    ) -> Dict[str, Any]:
+        """更新群组广告"""
+        ads = self._str_json(ads)
+        sql = f"""
+        UPDATE {self.table_name} 
+        SET ads = %s 
+        WHERE chat_id = %s
+        """
+        result = await self.execute_async(sql, (ads, chat_id))
+        return self.format_result(
+            bool(result),
+            f"Chat {chat_id} ads {'updated' if result else 'failed to update'}"
+        )
+        
+    async def get_chats_by_owner(self, owner_id: int) -> List[ChatInfo]:
+        """获取用户拥有的所有群组"""
+        sql = f"""
+        SELECT * FROM {self.table_name}
+        WHERE owner_id = %s
+        """
+        rows = await self.fetch_all_dict(sql, (owner_id,))
+        return [ChatInfo.from_dict(row) for row in rows]
+        
+    async def get_chat_info(self, chat_id: int) -> Optional[ChatInfo]:
+        """获取群组信息"""
+        sql = f"""
+        SELECT * FROM {self.table_name}
+        WHERE chat_id = %s
+        """
+        row = await self.fetch_one(sql, (chat_id,))
+        return ChatInfo.from_list(row) if row else None
