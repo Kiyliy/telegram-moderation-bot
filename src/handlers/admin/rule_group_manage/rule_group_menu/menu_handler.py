@@ -5,7 +5,7 @@ from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.registry.MessageFilters import MessageFilters
 from src.handlers.admin.base import AdminBaseHandler
 
-class AdminMenuHandler(AdminBaseHandler):
+class RuleGroupMenuHandler(AdminBaseHandler):
     """管理员主菜单处理器"""
     
     def _get_admin_main_menu(self) -> InlineKeyboardMarkup:
@@ -19,7 +19,7 @@ class AdminMenuHandler(AdminBaseHandler):
              InlineKeyboardButton("刷新设置 🔄", callback_data="admin:refresh")]
         ])
 
-    @MessageRegistry.register(MessageFilters.match_prefix(['/admin']))
+    # @MessageRegistry.register(MessageFilters.match_regex('^/?admin$'))
     async def handle_admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理 /admin 命令"""
         if not update.effective_user or not self._is_admin(update.effective_user.id):
@@ -91,5 +91,5 @@ class AdminMenuHandler(AdminBaseHandler):
             reply_markup=self._get_admin_main_menu()
         )
 
-# 初始化处理器
-AdminMenuHandler() 
+
+RuleGroupMenuHandler()
