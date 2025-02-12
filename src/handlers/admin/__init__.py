@@ -2,7 +2,7 @@ from src.handlers.admin.moderation_settings.moderation_handler import AdminModer
 from src.handlers.admin.moderation_settings.warning_handler import AdminWarningHandler
 from src.handlers.admin.moderation_settings.auto_action_handler import AdminAutoActionHandler
 from src.handlers.admin.moderation_settings.punishment_handler import AdminPunishmentHandler
-from handlers.admin.view_logs.log_handler import AdminLogHandler
+from src.handlers.admin.view_logs.log_handler import AdminLogHandler
 
 __all__ = [
     'AdminMenuHandler',
