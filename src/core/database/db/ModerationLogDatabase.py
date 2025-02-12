@@ -11,7 +11,10 @@ class ModerationLogDatabase(BaseDatabase):
         super().__init__()
         self.table_name = "moderation_logs"
         if os.getenv("SKIP_DB_INIT", "False") != "True":
+            print("创建审核日志表...")
             self._create_table()
+        else:
+            print("跳过创建审核日志表")
         
     def _create_table(self) -> None:
         """创建表"""

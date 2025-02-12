@@ -14,4 +14,10 @@ services:
       MYSQL_USER: mytest   # 创建专用用户
       MYSQL_PASSWORD: 'mytestsh2838'    # 设置专用用户密码
       MYSQL_DATABASE: mytest   # 自动创建数据库
-    command: --max_connections=1000 --binlog_expire_logs_seconds=864000
+    command: 
+      - --max_connections=1000
+      - --binlog_expire_logs_seconds=864000
+      - --bind-address=0.0.0.0
+      - --port=3306
+      - --default-authentication-plugin=mysql_native_password
+      
