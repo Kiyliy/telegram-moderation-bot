@@ -26,7 +26,7 @@ class UserViolationDatabase(BaseDatabase):
             message_id INTEGER,
             violation_type VARCHAR(50) NOT NULL,
             content TEXT,
-            action VARCHAR(20) NOT NULL,
+            action VARCHAR(50),
             duration INTEGER,
             operator_id INTEGER,
             created_at INTEGER,

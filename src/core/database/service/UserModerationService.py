@@ -5,6 +5,7 @@ from src.core.database.models.db_moderation_log import ModerationLog
 from src.core.database.service.ViolationService import ViolationService
 from src.core.database.service.WarningService import WarningService
 from src.core.database.service.ModerationLogService import ModerationLogService
+from src.core.database.service.ChatService import ChatService
 
 
 class UserModerationService:
@@ -14,6 +15,7 @@ class UserModerationService:
         self.warning_service = WarningService()
         self.violation_service = ViolationService()
         self.moderation_log_service = ModerationLogService()
+        self.chat_service = ChatService()
         
     async def record_violation(
         self,
@@ -34,7 +36,10 @@ class UserModerationService:
             (违规记录, 警告状态, 处罚类型, 处罚时长)
         """
         # 添加警告并获取处罚措施
-        status, action, duration = await self.warning_service.add_warning(user_id, chat_id)
+        status, action, duration = await self.warning_service.add_warning(
+            user_id=user_id,
+            chat_id=chat_id
+        )
         
         # 记录违规
         violation = await self.violation_service.add_violation(
@@ -71,7 +76,10 @@ class UserModerationService:
         chat_id: int
     ) -> Optional[UserWarningStatus]:
         """获取用户状态"""
-        return await self.warning_service.get_user_status(user_id, chat_id)
+        return await self.warning_service.get_user_status(
+            user_id=user_id,
+            chat_id=chat_id
+        )
         
     async def get_user_violations(
         self,
@@ -80,7 +88,11 @@ class UserModerationService:
         limit: int = 10
     ) -> List[UserViolation]:
         """获取用户违规记录"""
-        return await self.violation_service.get_user_violations(user_id, chat_id, limit)
+        return await self.violation_service.get_user_violations(
+            user_id=user_id,
+            chat_id=chat_id,
+            limit=limit
+        )
         
     async def get_chat_violations(
         self,
@@ -88,21 +100,28 @@ class UserModerationService:
         limit: int = 10
     ) -> List[UserViolation]:
         """获取群组违规记录"""
-        return await self.violation_service.get_chat_violations(chat_id, limit)
+        return await self.violation_service.get_chat_violations(
+            chat_id=chat_id,
+            limit=limit
+        )
         
     async def get_muted_users(
         self,
         chat_id: int
     ) -> List[UserWarningStatus]:
         """获取被禁言的用户"""
-        return await self.warning_service.get_muted_users(chat_id)
+        return await self.warning_service.get_muted_users(
+            chat_id=chat_id
+        )
         
     async def get_banned_users(
         self,
         chat_id: int
     ) -> List[UserWarningStatus]:
         """获取被封禁的用户"""
-        return await self.warning_service.get_banned_users(chat_id)
+        return await self.warning_service.get_banned_users(
+            chat_id=chat_id
+        )
         
     async def get_violation_stats(
         self,
@@ -111,9 +130,13 @@ class UserModerationService:
     ) -> Dict:
         """获取违规统计"""
         if chat_id:
-            return await self.violation_service.get_chat_violation_stats(chat_id)
+            return await self.violation_service.get_chat_violation_stats(
+                chat_id=chat_id
+            )
         if user_id:
-            return await self.violation_service.get_user_violation_stats(user_id)
+            return await self.violation_service.get_user_violation_stats(
+                user_id=user_id
+            )
         return {}
         
     async def remove_warning(

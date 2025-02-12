@@ -3,6 +3,9 @@ from src.core.database.models.db_rule_group import RuleGroup
 from src.core.database.db.base_database import BaseDatabase
 import os
 import json
+import uuid
+import string
+import random
 
 
 class RuleGroupDatabase(BaseDatabase):
@@ -17,11 +20,17 @@ class RuleGroupDatabase(BaseDatabase):
         else:
             print("跳过创建规则组表")
         
+    def _generate_rule_id(self) -> str:
+        """生成16位随机字符串作为rule_id"""
+        chars = string.ascii_letters + string.digits
+        return ''.join(random.choice(chars) for _ in range(16))
+        
     def _create_table(self) -> None:
         """创建表"""
         sql = f"""
         CREATE TABLE IF NOT EXISTS {self.table_name} (
             id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            rule_id VARCHAR(16) UNIQUE NOT NULL,
             name VARCHAR(255) NOT NULL,
             owner_id BIGINT NOT NULL,
             description TEXT,
@@ -39,24 +48,27 @@ class RuleGroupDatabase(BaseDatabase):
         owner_id: int,
         description: str = None,
         settings: Dict = None
-    ) -> Optional[int]:
-        """创建规则组"""
+    ) -> Optional[str]:
+        """创建规则组，返回rule_id"""
+        rule_id = self._generate_rule_id()
         sql = f"""
         INSERT INTO {self.table_name} (
-            name, owner_id, description, settings
-        ) VALUES (%s, %s, %s, %s)
+            rule_id, name, owner_id, description, settings
+        ) VALUES (%s, %s, %s, %s, %s)
         """
         values = (
+            rule_id,
             name,
             owner_id,
             description,
             json.dumps(settings) if settings else None
         )
-        return await self.execute_async(sql, values)
+        result = await self.execute_async(sql, values)
+        return rule_id if result else None
         
     async def update_rule_group(
         self,
-        group_id: int,
+        rule_id: str,
         name: str = None,
         description: str = None,
         settings: Dict = None
@@ -81,19 +93,19 @@ class RuleGroupDatabase(BaseDatabase):
         sql = f"""
         UPDATE {self.table_name}
         SET {", ".join(update_fields)}
-        WHERE id = %s
+        WHERE rule_id = %s
         """
-        values.append(group_id)
+        values.append(rule_id)
         result = await self.execute_async(sql, tuple(values))
         return bool(result)
         
-    async def get_rule_group(self, group_id: int) -> Optional[RuleGroup]:
+    async def get_rule_group(self, rule_id: str) -> Optional[RuleGroup]:
         """获取规则组信息"""
         sql = f"""
         SELECT * FROM {self.table_name}
-        WHERE id = %s
+        WHERE rule_id = %s
         """
-        row = await self.fetch_one(sql, (group_id,))
+        row = await self.fetch_one(sql, (rule_id,))
         return RuleGroup.from_list(row) if row else None
         
     async def get_owner_rule_groups(self, owner_id: int) -> List[RuleGroup]:
@@ -106,22 +118,22 @@ class RuleGroupDatabase(BaseDatabase):
         rows = await self.fetch_all(sql, (owner_id,))
         return [RuleGroup.from_list(row) for row in rows]
         
-    async def delete_rule_group(self, group_id: int) -> bool:
+    async def delete_rule_group(self, rule_id: str) -> bool:
         """删除规则组"""
         sql = f"""
         DELETE FROM {self.table_name}
-        WHERE id = %s
+        WHERE rule_id = %s
         """
-        result = await self.execute_async(sql, (group_id,))
+        result = await self.execute_async(sql, (rule_id,))
         return bool(result)
         
-    async def get_rule_group_settings(self, group_id: int) -> Optional[Dict]:
+    async def get_rule_group_settings(self, rule_id: str) -> Optional[Dict]:
         """获取规则组设置"""
         sql = f"""
         SELECT settings FROM {self.table_name}
-        WHERE id = %s
+        WHERE rule_id = %s
         """
-        row = await self.fetch_one(sql, (group_id,))
+        row = await self.fetch_one(sql, (rule_id,))
         if not row or not row[0]:
             return None
         return json.loads(row[0]) 

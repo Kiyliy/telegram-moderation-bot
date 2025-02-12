@@ -191,3 +191,32 @@ class ChatService:
             logger.error(f"获取所有者聊天列表时出错: {str(e)}", exc_info=True)
             print(f"获取所有者聊天列表时出错: {traceback.format_exc()}")
             return []
+
+    async def bind_chat_to_rule_group(
+        self,
+        chat_id: int,
+        rule_group_id: int
+    ) -> Dict[str, Any]:
+        """绑定群组到规则组"""
+        return await self.db.bind_chat_to_rule_group(
+            chat_id=chat_id,
+            rule_group_id=rule_group_id
+        )
+
+    async def unbind_chat_from_rule_group(
+        self,
+        chat_id: int
+    ) -> Dict[str, Any]:
+        """解绑群组"""
+        return await self.db.unbind_chat_from_rule_group(chat_id)
+
+    async def get_chats_by_rule_group(
+        self,
+        rule_group_id: int
+    ) -> List[ChatInfo]:
+        """获取规则组内的所有群组"""
+        return await self.db.get_chats_by_rule_group(rule_group_id)
+
+    async def get_unbound_chats(self) -> List[ChatInfo]:
+        """获取未绑定规则组的群组"""
+        return await self.db.get_unbound_chats()

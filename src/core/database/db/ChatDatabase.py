@@ -25,11 +25,13 @@ class ChatDatabase(BaseDatabase):
             chat_type ENUM('private', 'group', 'supergroup', 'channel') NOT NULL,
             title VARCHAR(255),
             owner_id BIGINT,
+            rule_group_id VARCHAR(16),
             ads TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_owner_id (owner_id),
-            INDEX idx_chat_type (chat_type)
+            INDEX idx_chat_type (chat_type),
+            INDEX idx_rule_group (rule_group_id)
         )
         """
         self.execute(sql)
@@ -38,16 +40,15 @@ class ChatDatabase(BaseDatabase):
         self,
         chat_id: int,
         chat_type: str,
-        title: Optional[str] = None,
-        owner_id: Optional[int] = None
+        title: Optional[str] = None
     ) -> Dict[str, Any]:
         """添加群组"""
         sql = f"""
         INSERT INTO {self.table_name} (
-            chat_id, chat_type, title, owner_id
-        ) VALUES (%s, %s, %s, %s)
+            chat_id, chat_type, title
+        ) VALUES (%s, %s, %s)
         """
-        result = await self.execute_async(sql, (chat_id, chat_type, title, owner_id))
+        result = await self.execute_async(sql, (chat_id, chat_type, title))
         return self.format_result(
             bool(result),
             f"Chat {chat_id} {'added' if result else 'failed to add'}"
@@ -155,3 +156,59 @@ class ChatDatabase(BaseDatabase):
         """
         row = await self.fetch_one(sql, (chat_id,))
         return ChatInfo.from_list(row) if row else None
+
+    async def bind_chat_to_rule_group(
+        self,
+        chat_id: int,
+        rule_group_id: int
+    ) -> Dict[str, Any]:
+        """绑定群组到规则组"""
+        sql = f"""
+        UPDATE {self.table_name} 
+        SET rule_group_id = %s 
+        WHERE chat_id = %s
+        """
+        result = await self.execute_async(sql, (rule_group_id, chat_id))
+        return self.format_result(
+            bool(result),
+            f"Chat {chat_id} {'bound' if result else 'failed to bind'} to rule group {rule_group_id}"
+        )
+        
+    async def unbind_chat_from_rule_group(
+        self,
+        chat_id: int
+    ) -> Dict[str, Any]:
+        """解绑群组"""
+        sql = f"""
+        UPDATE {self.table_name} 
+        SET rule_group_id = NULL 
+        WHERE chat_id = %s
+        """
+        result = await self.execute_async(sql, (chat_id,))
+        return self.format_result(
+            bool(result),
+            f"Chat {chat_id} {'unbound' if result else 'failed to unbind'}"
+        )
+        
+    async def get_chats_by_rule_group(
+        self,
+        rule_group_id: int
+    ) -> List[ChatInfo]:
+        """获取规则组内的所有群组"""
+        sql = f"""
+        SELECT * FROM {self.table_name}
+        WHERE rule_group_id = %s
+        ORDER BY created_at DESC
+        """
+        rows = await self.fetch_all(sql, (rule_group_id,))
+        return [ChatInfo.from_list(row) for row in rows]
+        
+    async def get_unbound_chats(self) -> List[ChatInfo]:
+        """获取未绑定规则组的群组"""
+        sql = f"""
+        SELECT * FROM {self.table_name}
+        WHERE rule_group_id IS NULL
+        ORDER BY created_at DESC
+        """
+        rows = await self.fetch_all(sql)
+        return [ChatInfo.from_list(row) for row in rows]

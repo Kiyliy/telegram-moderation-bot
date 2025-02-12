@@ -27,7 +27,8 @@ class UserWarningStatusDatabase(BaseDatabase):
             muted_until INTEGER,
             banned_at INTEGER,
             created_at INTEGER,
-            updated_at INTEGER
+            updated_at INTEGER,
+            INDEX idx_user_chat (user_id, chat_id)
         )
         """
         self.execute(sql)
