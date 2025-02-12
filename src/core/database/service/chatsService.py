@@ -1,7 +1,7 @@
 from typing import Dict, Any, Optional, List
 import traceback
 from src.core.logger import logger
-from core.database.db.ChatDatabase import ChatDatabase, ChatInfo
+from src.core.database.db.ChatDatabase import ChatDatabase, ChatInfo
 import json
 
 

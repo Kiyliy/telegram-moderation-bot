@@ -84,7 +84,7 @@ class AdminGroupHandler(AdminBaseHandler):
         offset = (page - 1) * self.page_size
         
         # 获取群组列表
-        groups = await self.chat_service.get_all_groups(
+        groups = await self.chat_service.get_owner_groups(
             limit=self.page_size + 1,
             offset=offset
         )
