@@ -12,8 +12,8 @@ import traceback
 class RedemptionCodesDatabase(BaseDatabase):
     """兑换码数据库操作类"""
     
-    def __init__(self):
-        super().__init__()
+    def _initialize(self):
+        super()._initialize()
         self.table_name = "redemption_codes"
         if os.getenv("SKIP_DB_INIT", "False") != "True":
             print("创建兑换码表...")

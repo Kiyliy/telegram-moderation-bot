@@ -9,8 +9,8 @@ import os
 class ChatMessageHistory(BaseDatabase):
     """聊天消息历史记录数据库操作类"""
     
-    def __init__(self):
-        super().__init__()
+    def _initialize(self):
+        super()._initialize()
         self.table_name = "chat_messages"
         if os.getenv("SKIP_DB_INIT", "False") != "True":
             print("创建聊天消息历史记录表...")

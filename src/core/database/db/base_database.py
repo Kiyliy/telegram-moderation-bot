@@ -8,16 +8,27 @@ from dotenv import load_dotenv
 
 class BaseDatabase:
     """
-    数据库基类
+    数据库基类，实现单例模式
     """
-    _instance = None
+    _instances = {}
+    _initialized = {}
     
-    def __new__(cls):
-        if not cls._instance:
-            cls._instance = super(BaseDatabase, cls).__new__(cls)
-        return cls._instance
-    
+    def __new__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(BaseDatabase, cls).__new__(cls)
+            cls._initialized[cls] = False
+        return cls._instances[cls]
+        
     def __init__(self):
+        # 检查当前类是否已经初始化过
+        if self.__class__ not in self._initialized or not self._initialized[self.__class__]:
+            self._initialize()
+            self._initialized[self.__class__] = True
+        
+    def _initialize(self):
+        """
+        真正的初始化方法，子类应该重写这个方法而不是 __init__
+        """
         # 加载环境变量
         load_dotenv()
         

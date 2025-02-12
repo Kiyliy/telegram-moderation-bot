@@ -7,8 +7,8 @@ import os
 class UserViolationDatabase(BaseDatabase):
     """用户违规记录数据库操作类"""
     
-    def __init__(self):
-        super().__init__()
+    def _initialize(self):
+        super()._initialize()
         self.table_name = "user_violation"
         if os.getenv("SKIP_DB_INIT", "False") != "True":
             print("创建用户违规记录表")

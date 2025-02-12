@@ -12,8 +12,8 @@ from src.core.database.db.base_database import BaseDatabase
 class UserLogsDatabase(BaseDatabase):
     """用户日志数据库操作类"""
     
-    def __init__(self):
-        super().__init__()
+    def _initialize(self):
+        super()._initialize()
         self.table_name = "user_logs"
         if os.getenv("SKIP_DB_INIT", "False") != "True":
             print("创建用户日志表...")

@@ -11,8 +11,8 @@ import random
 class RuleGroupDatabase(BaseDatabase):
     """规则组数据库操作类"""
     
-    def __init__(self):
-        super().__init__()
+    def _initialize(self):
+        super()._initialize()
         self.table_name = "rule_group"
         if os.getenv("SKIP_DB_INIT", "False") != "True":
             print("创建规则组表...")

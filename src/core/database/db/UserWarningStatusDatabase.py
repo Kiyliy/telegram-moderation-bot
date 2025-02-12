@@ -7,8 +7,8 @@ import os
 class UserWarningStatusDatabase(BaseDatabase):
     """用户警告状态数据库操作类"""
     
-    def __init__(self):
-        super().__init__()
+    def _initialize(self):
+        super()._initialize()
         self.table_name = "user_warning_status"
         if os.getenv("SKIP_DB_INIT", "False") != "True":
             print("创建用户警告状态表...")
