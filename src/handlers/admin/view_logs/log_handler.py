@@ -2,79 +2,51 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.handlers.admin.base import AdminBaseHandler
-from datetime import datetime, timedelta
-from typing import List, Tuple
-import os
+from src.core.database.service.ModerationLogService import ModerationLogService
+from src.core.database.service.UserModerationService import UserModerationService
+from datetime import datetime
+import time
+from typing import List
+
 
 class AdminLogHandler(AdminBaseHandler):
     """管理员日志查看处理器"""
     
     def __init__(self):
         super().__init__()
-        self.log_dir = "logs"  # 日志目录
         self.page_size = 10  # 每页显示条数
-        os.makedirs(self.log_dir, exist_ok=True)
+        self.moderation_log_service = ModerationLogService()
+        self.user_moderation_service = UserModerationService()
 
-    def _read_log_file(self, file_path: str, page: int = 1) -> Tuple[List[str], int]:
-        """
-        读取日志文件，支持分页
-        
-        Args:
-            file_path: 日志文件路径
-            page: 页码（从1开始）
-            
-        Returns:
-            (日志列表, 总页数)
-        """
-        if not os.path.exists(file_path):
-            return [], 0
-            
-        with open(file_path, 'r', encoding='utf-8') as f:
-            all_logs = f.readlines()
-            
-        # 计算总页数
-        total_pages = (len(all_logs) + self.page_size - 1) // self.page_size
-        
-        # 确保页码有效
-        page = min(max(1, page), total_pages) if total_pages > 0 else 1
-        
-        # 计算当前页的日志
-        start_idx = (total_pages - page) * self.page_size  # 倒序显示，最新的在第1页
-        end_idx = start_idx + self.page_size
-        page_logs = all_logs[start_idx:end_idx]
-        
-        return page_logs, total_pages
-
-    def _get_pagination_keyboard(self, current_page: int, total_pages: int, base_callback: str) -> List[List[InlineKeyboardButton]]:
+    def _get_pagination_keyboard(
+        self, 
+        current_page: int,
+        has_next: bool,
+        base_callback: str,
+        back_callback: str = "admin:logs"
+    ) -> List[List[InlineKeyboardButton]]:
         """生成分页键盘"""
         keyboard = []
         
         # 分页按钮
         pagination_row = []
-        if current_page < total_pages:  # 因为是倒序，所以这里判断相反
-            pagination_row.append(InlineKeyboardButton(
-                "« 上一页", 
-                callback_data=f"{base_callback}:{current_page+1}"
-            ))
         if current_page > 1:
             pagination_row.append(InlineKeyboardButton(
-                "下一页 »", 
+                "« 上一页", 
                 callback_data=f"{base_callback}:{current_page-1}"
+            ))
+        if has_next:
+            pagination_row.append(InlineKeyboardButton(
+                "下一页 »", 
+                callback_data=f"{base_callback}:{current_page+1}"
             ))
         if pagination_row:
             keyboard.append(pagination_row)
             
-        # 页码信息
-        if total_pages > 1:
-            keyboard.append([InlineKeyboardButton(
-                f"第 {current_page}/{total_pages} 页",
-                callback_data="noop"  # 这个按钮不会触发任何操作
-            )])
-        
         # 控制按钮
         keyboard.append([
             InlineKeyboardButton("刷新", callback_data=f"{base_callback}:{current_page}"),
-            InlineKeyboardButton("« 返回", callback_data="admin:logs")
+            InlineKeyboardButton("« 返回", callback_data=back_callback)
         ])
         
         return keyboard
@@ -87,41 +59,84 @@ class AdminLogHandler(AdminBaseHandler):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
+        # 获取待审核申诉数量
+        pending_appeals = await self.moderation_log_service.get_pending_appeals(limit=1)
+        pending_count = len(pending_appeals)
+
         keyboard = [
-            [InlineKeyboardButton("今日日志", callback_data="admin:logs:today:1"),
-             InlineKeyboardButton("本周日志", callback_data="admin:logs:week")],
+            [InlineKeyboardButton(
+                f"待处理申诉 ({pending_count})", 
+                callback_data="admin:logs:pending:1"
+            )],
             [InlineKeyboardButton("违规记录", callback_data="admin:logs:violations:1"),
-             InlineKeyboardButton("操作记录", callback_data="admin:logs:operations:1")],
-            [InlineKeyboardButton("« 返回", callback_data="admin:back")]
+             InlineKeyboardButton("审核记录", callback_data="admin:logs:reviews:1")],
+            [InlineKeyboardButton("审核统计", callback_data="admin:logs:stats"),
+             InlineKeyboardButton("« 返回", callback_data="admin:back")]
         ]
 
         await self._safe_edit_message(
             query,
-            "📋 日志查看\n"
-            "请选择要查看的日志类型：",
+            "📋 审核日志查看\n"
+            "请选择要查看的内容：",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    @CallbackRegistry.register(r"^admin:logs:today:(\d+)$")
-    async def handle_today_logs(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理今日日志查看"""
+    @CallbackRegistry.register(r"^admin:logs:pending:(\d+)$")
+    async def handle_pending_logs(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理待审核日志查看"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
         page = int(query.data.split(":")[-1])
-        today = datetime.now().strftime("%Y-%m-%d")
-        log_file = os.path.join(self.log_dir, f"{today}.log")
+        offset = (page - 1) * self.page_size
         
-        logs, total_pages = self._read_log_file(log_file, page)
+        # 获取待审核申诉
+        logs = await self.moderation_log_service.get_pending_appeals(
+            limit=self.page_size + 1,  # 多获取一条用于判断是否有下一页
+            offset=offset
+        )
+        
+        has_next = len(logs) > self.page_size
+        logs = logs[:self.page_size]  # 去掉多获取的一条
         
         if not logs:
-            text = "📋 今日日志\n\n暂无日志记录"
+            text = "📋 待处理申诉\n\n暂无待处理的申诉"
         else:
-            text = f"📋 今日日志：\n\n" + "".join(logs)
+            text = "📋 待处理申诉：\n\n"
+            for log in logs:
+                text += (
+                    f"ID: {log.id}\n"
+                    f"用户: {log.user_id}\n"
+                    f"群组: {log.chat_id}\n"
+                    f"类型: {log.violation_type or '未知'}\n"
+                    f"内容: {log.content[:100] + '...' if len(log.content or '') > 100 else log.content}\n"
+                    f"置信度: {log.confidence or 'N/A'}\n"
+                    f"申诉理由: {log.appeal_reason}\n"
+                    f"申诉时间: {datetime.fromtimestamp(log.appeal_time).strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    f"------------------------\n"
+                )
+
+        keyboard = self._get_pagination_keyboard(
+            current_page=page,
+            has_next=has_next,
+            base_callback="admin:logs:pending"
+        )
         
-        keyboard = self._get_pagination_keyboard(page, total_pages, "admin:logs:today")
+        # 如果有记录,添加审核按钮
+        if logs:
+            for log in logs:
+                keyboard.insert(-1, [
+                    InlineKeyboardButton(
+                        f"✅ 通过 #{log.id}", 
+                        callback_data=f"admin:logs:approve:{log.id}"
+                    ),
+                    InlineKeyboardButton(
+                        f"❌ 驳回 #{log.id}",
+                        callback_data=f"admin:logs:reject:{log.id}"
+                    )
+                ])
         
         await self._safe_edit_message(
             query,
@@ -129,62 +144,45 @@ class AdminLogHandler(AdminBaseHandler):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    @CallbackRegistry.register(r"^admin:logs:week$")
-    async def handle_week_logs(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理本周日志查看"""
+    @CallbackRegistry.register(r"^admin:logs:(approve|reject):(\d+)$")
+    async def handle_review_action(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理审核操作"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
-
-        # 获取过去7天的日期
-        dates = [(datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d") 
-                for i in range(7)]
-        
-        keyboard = []
-        for date in dates:
-            log_file = os.path.join(self.log_dir, f"{date}.log")
-            status = "✅" if os.path.exists(log_file) else "❌"
-            keyboard.append([InlineKeyboardButton(
-                f"{date} {status}",
-                callback_data=f"admin:logs:date:{date}:1"
-            )])
             
-        keyboard.append([InlineKeyboardButton("« 返回", callback_data="admin:logs")])
+        action = query.data.split(":")[2]
+        log_id = int(query.data.split(":")[-1])
         
-        await self._safe_edit_message(
-            query,
-            "📅 本周日志\n"
-            "请选择要查看的日期：",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+        # 更新审核状态
+        success = await self.moderation_log_service.update_review_status(
+            log_id=log_id,
+            review_status="approved" if action == "approve" else "rejected",
+            reviewer_id=query.from_user.id
         )
-
-    @CallbackRegistry.register(r"^admin:logs:date:(\d{4}-\d{2}-\d{2}):(\d+)$")
-    async def handle_date_logs(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理特定日期日志查看"""
-        query = update.callback_query
-        if not self._is_admin(query.from_user.id):
-            await query.answer("⚠️ 没有权限", show_alert=True)
-            return
-
-        date = query.data.split(":")[-2]
-        page = int(query.data.split(":")[-1])
-        log_file = os.path.join(self.log_dir, f"{date}.log")
         
-        logs, total_pages = self._read_log_file(log_file, page)
-        
-        if not logs:
-            text = f"📋 {date} 日志\n\n暂无日志记录"
+        if success:
+            await query.answer(
+                f"✅ 已{'通过' if action == 'approve' else '驳回'}审核 #{log_id}",
+                show_alert=True
+            )
         else:
-            text = f"📋 {date} 日志：\n\n" + "".join(logs)
-
-        keyboard = self._get_pagination_keyboard(page, total_pages, f"admin:logs:date:{date}")
+            await query.answer("❌ 操作失败", show_alert=True)
+            
+        # 刷新页面
+        # 从当前callback_data中提取页码
+        current_page = 1  # 默认第1页
+        for row in query.message.reply_markup.inline_keyboard:
+            for button in row:
+                if button.callback_data.startswith("admin:logs:pending:"):
+                    current_page = int(button.callback_data.split(":")[-1])
+                    break
         
-        await self._safe_edit_message(
-            query,
-            text[:4000],  # Telegram消息长度限制
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        # 重新调用handle_pending_logs
+        context.user_data["callback_query"] = query
+        context.user_data["callback_data"] = f"admin:logs:pending:{current_page}"
+        await self.handle_pending_logs(update, context)
 
     @CallbackRegistry.register(r"^admin:logs:violations:(\d+)$")
     async def handle_violations(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -195,16 +193,26 @@ class AdminLogHandler(AdminBaseHandler):
             return
 
         page = int(query.data.split(":")[-1])
-        violation_file = os.path.join(self.log_dir, "violations.log")
+        offset = (page - 1) * self.page_size
         
-        logs, total_pages = self._read_log_file(violation_file, page)
+        # 获取违规记录
+        violations = await self.user_moderation_service.get_violation_stats()
         
-        if not logs:
-            text = "📋 违规记录\n\n暂无违规记录"
+        if not violations:
+            text = "📋 违规统计\n\n暂无违规记录"
         else:
-            text = "📋 违规记录：\n\n" + "".join(logs)
+            text = "📋 违规统计：\n\n"
+            for vtype, stats in violations.items():
+                text += (
+                    f"类型: {vtype}\n"
+                    f"总次数: {stats['count']}\n"
+                    f"涉及用户数: {stats['user_count']}\n"
+                    f"------------------------\n"
+                )
 
-        keyboard = self._get_pagination_keyboard(page, total_pages, "admin:logs:violations")
+        keyboard = [
+            [InlineKeyboardButton("« 返回", callback_data="admin:logs")]
+        ]
         
         await self._safe_edit_message(
             query,
@@ -212,25 +220,74 @@ class AdminLogHandler(AdminBaseHandler):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    @CallbackRegistry.register(r"^admin:logs:operations:(\d+)$")
-    async def handle_operations(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理操作记录查看"""
+    @CallbackRegistry.register(r"^admin:logs:reviews:(\d+)$")
+    async def handle_reviews(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理审核记录查看"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
         page = int(query.data.split(":")[-1])
-        operation_file = os.path.join(self.log_dir, "operations.log")
+        offset = (page - 1) * self.page_size
         
-        logs, total_pages = self._read_log_file(operation_file, page)
+        # 获取审核统计
+        stats = await self.moderation_log_service.get_review_stats()
         
-        if not logs:
-            text = "📋 操作记录\n\n暂无操作记录"
+        if not stats:
+            text = "📋 审核统计\n\n暂无审核记录"
         else:
-            text = "📋 操作记录：\n\n" + "".join(logs)
+            text = "📋 审核统计：\n\n"
+            for status, stat in stats.items():
+                text += (
+                    f"状态: {status}\n"
+                    f"数量: {stat['count']}\n"
+                    f"涉及用户数: {stat['user_count']}\n"
+                    f"涉及群组数: {stat['chat_count']}\n"
+                    f"平均置信度: {stat['avg_confidence']:.2f}\n"
+                    f"------------------------\n"
+                )
 
-        keyboard = self._get_pagination_keyboard(page, total_pages, "admin:logs:operations")
+        keyboard = [
+            [InlineKeyboardButton("« 返回", callback_data="admin:logs")]
+        ]
+        
+        await self._safe_edit_message(
+            query,
+            text[:4000],  # Telegram消息长度限制
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    @CallbackRegistry.register(r"^admin:logs:stats$")
+    async def handle_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理统计信息查看"""
+        query = update.callback_query
+        if not self._is_admin(query.from_user.id):
+            await query.answer("⚠️ 没有权限", show_alert=True)
+            return
+            
+        # 获取各种统计信息
+        review_stats = await self.moderation_log_service.get_review_stats()
+        
+        text = "📊 审核统计\n\n"
+        
+        # 审核状态统计
+        text += "审核状态统计：\n"
+        total_count = 0
+        for status, stat in review_stats.items():
+            count = stat['count']
+            total_count += count
+            text += f"{status}: {count} 条\n"
+        text += f"总计: {total_count} 条\n\n"
+        
+        # AI置信度统计
+        text += "AI置信度统计：\n"
+        for status, stat in review_stats.items():
+            text += f"{status}: {stat['avg_confidence']:.2%}\n"
+        
+        keyboard = [
+            [InlineKeyboardButton("« 返回", callback_data="admin:logs")]
+        ]
         
         await self._safe_edit_message(
             query,

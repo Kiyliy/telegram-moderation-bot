@@ -17,6 +17,9 @@ class ModerationLog:
     operator_id: Optional[int] = None  # 操作者ID(机器人或管理员)
     is_auto: bool = True  # 是否自动处理
     confidence: Optional[float] = None  # AI判断的置信度
+    has_appeal: bool = False  # 是否有申诉
+    appeal_time: Optional[int] = None  # 申诉时间
+    appeal_reason: Optional[str] = None  # 申诉理由
     review_status: str = "pending"  # 人工审核状态(pending/approved/rejected)
     review_time: Optional[int] = None  # 人工审核时间
     reviewer_id: Optional[int] = None  # 审核员ID
@@ -38,11 +41,14 @@ class ModerationLog:
             operator_id=row[9],
             is_auto=bool(row[10]),
             confidence=row[11],
-            review_status=row[12],
-            review_time=row[13],
-            reviewer_id=row[14],
-            created_at=row[15],
-            updated_at=row[16]
+            has_appeal=bool(row[12]),
+            appeal_time=row[13],
+            appeal_reason=row[14],
+            review_status=row[15],
+            review_time=row[16],
+            reviewer_id=row[17],
+            created_at=row[18],
+            updated_at=row[19]
         )
 
     @classmethod
@@ -63,6 +69,9 @@ class ModerationLog:
             'operator_id': self.operator_id,
             'is_auto': self.is_auto,
             'confidence': self.confidence,
+            'has_appeal': self.has_appeal,
+            'appeal_time': self.appeal_time,
+            'appeal_reason': self.appeal_reason,
             'review_status': self.review_status,
             'review_time': self.review_time,
             'reviewer_id': self.reviewer_id,

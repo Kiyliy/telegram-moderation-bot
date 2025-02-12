@@ -29,6 +29,9 @@ class ModerationLogDatabase(BaseDatabase):
             operator_id BIGINT,
             is_auto BOOLEAN DEFAULT TRUE,
             confidence FLOAT,
+            has_appeal BOOLEAN DEFAULT FALSE,
+            appeal_time INT,
+            appeal_reason TEXT,
             review_status VARCHAR(20) DEFAULT 'pending',
             review_time INT,
             reviewer_id BIGINT,
@@ -37,7 +40,8 @@ class ModerationLogDatabase(BaseDatabase):
             INDEX idx_user_chat (user_id, chat_id),
             INDEX idx_review_status (review_status),
             INDEX idx_created_at (created_at),
-            INDEX idx_violation_type (violation_type)
+            INDEX idx_violation_type (violation_type),
+            INDEX idx_has_appeal (has_appeal)
         )
         """
         self.execute(sql)
@@ -48,9 +52,9 @@ class ModerationLogDatabase(BaseDatabase):
         INSERT INTO {self.table_name} (
             user_id, chat_id, message_id, content, content_type,
             violation_type, action, action_duration, operator_id,
-            is_auto, confidence, review_status, review_time,
-            reviewer_id, created_at, updated_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            is_auto, confidence, has_appeal, appeal_time, appeal_reason,
+            review_status, review_time, reviewer_id, created_at, updated_at
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         values = (
             log.user_id,
@@ -64,6 +68,9 @@ class ModerationLogDatabase(BaseDatabase):
             log.operator_id,
             log.is_auto,
             log.confidence,
+            log.has_appeal,
+            log.appeal_time,
+            log.appeal_reason,
             log.review_status,
             log.review_time,
             log.reviewer_id,
@@ -94,6 +101,27 @@ class ModerationLogDatabase(BaseDatabase):
         )
         return bool(result)
         
+    async def update_appeal(
+        self,
+        log_id: int,
+        appeal_reason: str,
+        appeal_time: int
+    ) -> bool:
+        """更新申诉信息"""
+        sql = f"""
+        UPDATE {self.table_name}
+        SET has_appeal = TRUE,
+            appeal_reason = %s,
+            appeal_time = %s,
+            updated_at = %s
+        WHERE id = %s
+        """
+        result = await self.execute_async(
+            sql,
+            (appeal_reason, appeal_time, appeal_time, log_id)
+        )
+        return bool(result)
+        
     async def get_pending_logs(
         self,
         limit: int = 10,
@@ -104,6 +132,21 @@ class ModerationLogDatabase(BaseDatabase):
         SELECT * FROM {self.table_name}
         WHERE review_status = 'pending'
         ORDER BY created_at DESC
+        LIMIT %s OFFSET %s
+        """
+        rows = await self.fetch_all(sql, (limit, offset))
+        return [ModerationLog.from_list(row) for row in rows]
+        
+    async def get_pending_appeals(
+        self,
+        limit: int = 10,
+        offset: int = 0
+    ) -> List[ModerationLog]:
+        """获取待处理的申诉"""
+        sql = f"""
+        SELECT * FROM {self.table_name}
+        WHERE has_appeal = TRUE AND review_status = 'pending'
+        ORDER BY appeal_time DESC
         LIMIT %s OFFSET %s
         """
         rows = await self.fetch_all(sql, (limit, offset))

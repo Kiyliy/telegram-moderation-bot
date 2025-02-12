@@ -37,6 +37,7 @@ class ModerationLogService:
             operator_id=operator_id,
             is_auto=is_auto,
             confidence=confidence,
+            has_appeal=False,  # 默认无申诉
             review_status="pending",
             created_at=int(time.time()),
             updated_at=int(time.time())
@@ -92,4 +93,24 @@ class ModerationLogService:
         
     async def get_review_stats(self) -> Dict[str, Any]:
         """获取审核统计"""
-        return await self.log_db.get_review_stats() 
+        return await self.log_db.get_review_stats()
+        
+    async def add_appeal(
+        self,
+        log_id: int,
+        appeal_reason: str
+    ) -> bool:
+        """添加申诉"""
+        return await self.log_db.update_appeal(
+            log_id=log_id,
+            appeal_reason=appeal_reason,
+            appeal_time=int(time.time())
+        )
+        
+    async def get_pending_appeals(
+        self,
+        limit: int = 10,
+        offset: int = 0
+    ) -> List[ModerationLog]:
+        """获取待处理的申诉"""
+        return await self.log_db.get_pending_appeals(limit, offset) 
