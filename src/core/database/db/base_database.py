@@ -6,9 +6,16 @@ from src.core.logger import logger
 import traceback
 from dotenv import load_dotenv
 
-
 class BaseDatabase:
-    """数据库基类"""
+    """
+    数据库基类
+    """
+    _instance = None
+    
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super(BaseDatabase, cls).__new__(cls)
+        return cls._instance
     
     def __init__(self):
         # 加载环境变量
