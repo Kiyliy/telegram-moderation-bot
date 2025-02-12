@@ -49,7 +49,7 @@ class ChatDatabase(BaseDatabase):
             bool(result),
             f"Chat {chat_id} {'added' if result else 'failed to add'}"
         )
-        
+
     async def update_chat_info(
         self,
         chat_id: int,
@@ -143,7 +143,7 @@ class ChatDatabase(BaseDatabase):
         """
         rows = await self.fetch_all_dict(sql, (owner_id,))
         return [ChatInfo.from_dict(row) for row in rows]
-        
+
     async def get_chat_info(self, chat_id: int) -> Optional[ChatInfo]:
         """获取群组信息"""
         sql = f"""

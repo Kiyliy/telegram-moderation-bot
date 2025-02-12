@@ -47,7 +47,7 @@ class UserDatabase(BaseDatabase):
         )
         """
         self.execute(sql)
-        
+
     async def add_user(
         self,
         user_id: int,
@@ -184,7 +184,7 @@ class UserDatabase(BaseDatabase):
             bool(result),
             f"User {user_id} balance {'updated' if result else 'failed to update'}"
         )
-        
+
     async def reset_daily_balance(
         self, 
         user_id: int, 
