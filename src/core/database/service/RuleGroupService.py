@@ -3,6 +3,7 @@ from src.core.database.models.db_rule_group import RuleGroup
 from src.core.database.db.RuleGroupDatabase import RuleGroupDatabase
 from src.core.database.service.chatsService import ChatService
 from src.core.database.service.UserModerationService import UserModerationService
+from src.core.database.service.UserModerationConfigKeys import UserModerationConfigKeys as configkey
 import time
 
 
@@ -33,19 +34,23 @@ class RuleGroupService:
         Returns:
             创建的规则组对象
         """
+        # 如果没有提供设置，使用默认设置
+        if settings is None:
+            settings = await self.get_default_settings()
+            
         # 创建规则组
-        group_id = await self.rule_group_db.create_rule_group(
+        rule_id = await self.rule_group_db.create_rule_group(
             name=name,
             owner_id=owner_id,
             description=description,
             settings=settings
         )
         
-        if not group_id:
+        if not rule_id:
             return None
             
         # 返回创建的规则组
-        return await self.rule_group_db.get_rule_group(group_id)
+        return await self.rule_group_db.get_rule_group(rule_id)
         
     async def update_rule_group(
         self,
@@ -66,6 +71,13 @@ class RuleGroupService:
         Returns:
             是否更新成功
         """
+        # 如果要更新设置，先获取当前设置
+        if settings is not None:
+            current_settings = await self.get_rule_group_settings(group_id)
+            if current_settings:
+                # 合并设置
+                settings = {**current_settings, **settings}
+        
         return await self.rule_group_db.update_rule_group(
             group_id=group_id,
             name=name,
@@ -80,15 +92,13 @@ class RuleGroupService:
         """
         删除规则组
         
-        注意：删除前需要确保没有群组绑定到该规则组
-        
         Args:
             group_id: 规则组ID
             
         Returns:
             是否删除成功
         """
-        # 检查是否有群组绑定
+        # 检查是否有群组绑定到此规则组
         chats = await self.chat_service.get_chats_by_rule_group(group_id)
         if chats:
             return False
@@ -156,6 +166,12 @@ class RuleGroupService:
         Returns:
             是否更新成功
         """
+        # 获取当前设置
+        current_settings = await self.get_rule_group_settings(group_id)
+        if current_settings:
+            # 合并设置
+            settings = {**current_settings, **settings}
+            
         return await self.rule_group_db.update_rule_group(
             group_id=group_id,
             settings=settings
@@ -172,26 +188,45 @@ class RuleGroupService:
             group_id: 规则组ID
             
         Returns:
-            统计信息字典，包含：
-            - chat_count: 群组数量
-            - violation_stats: 违规统计
-            - banned_users: 封禁用户数
+            统计信息字典
         """
-        # 获取群组数量
-        chats = await self.chat_service.get_chats_by_rule_group(group_id)
-        chat_count = len(chats)
-        
-        # 获取违规统计
-        violation_stats = await self.moderation_service.get_violation_stats(rule_group_id=group_id)
-        
-        # 获取封禁用户数
-        banned_users = await self.moderation_service.get_banned_users(rule_group_id=group_id)
-        
-        return {
-            'chat_count': chat_count,
-            'violation_stats': violation_stats,
-            'banned_users_count': len(banned_users)
+        stats = {
+            "total_chats": 0,
+            "total_violations": 0,
+            "violations_by_type": {},
+            "total_users": 0,
+            "muted_users": 0,
+            "banned_users": 0
         }
+        
+        # 获取规则组内的所有群组
+        chats = await self.chat_service.get_chats_by_rule_group(group_id)
+        stats["total_chats"] = len(chats)
+        
+        # 统计每个群组的信息
+        for chat in chats:
+            # 获取违规统计
+            violations = await self.moderation_service.get_violation_stats(
+                chat_id=chat.chat_id
+            )
+            for vtype, vstats in violations.items():
+                if vtype not in stats["violations_by_type"]:
+                    stats["violations_by_type"][vtype] = {
+                        "count": 0,
+                        "user_count": 0
+                    }
+                stats["violations_by_type"][vtype]["count"] += vstats["count"]
+                stats["violations_by_type"][vtype]["user_count"] += vstats["user_count"]
+                stats["total_violations"] += vstats["count"]
+                stats["total_users"] += vstats["user_count"]
+            
+            # 获取禁言和封禁用户数
+            muted = await self.moderation_service.get_muted_users(chat.chat_id)
+            banned = await self.moderation_service.get_banned_users(chat.chat_id)
+            stats["muted_users"] += len(muted)
+            stats["banned_users"] += len(banned)
+            
+        return stats
         
     async def bind_chat(
         self,
@@ -199,7 +234,7 @@ class RuleGroupService:
         rule_group_id: int
     ) -> bool:
         """
-        将群组绑定到规则组
+        绑定群组到规则组
         
         Args:
             chat_id: 群组ID
@@ -208,10 +243,11 @@ class RuleGroupService:
         Returns:
             是否绑定成功
         """
-        return await self.chat_service.bind_chat_to_rule_group(
+        result = await self.chat_service.bind_chat_to_rule_group(
             chat_id=chat_id,
             rule_group_id=rule_group_id
         )
+        return result["success"]
         
     async def unbind_chat(
         self,
@@ -226,29 +262,5 @@ class RuleGroupService:
         Returns:
             是否解绑成功
         """
-        return await self.chat_service.unbind_chat_from_rule_group(chat_id)
-        
-    async def get_default_settings(self) -> Dict:
-        """获取默认设置"""
-        return {
-            "warning": {
-                "max_warnings": 3,
-                "reset_after_days": 30
-            },
-            "punishment": {
-                "mute_durations": [300, 3600, 86400],
-                "ban_threshold": 5
-            },
-            "moderation": {
-                "rules": {
-                    "nsfw": True,
-                    "spam": True,
-                    "violence": False
-                },
-                "sensitivity": {
-                    "nsfw": 0.8,
-                    "spam": 0.7,
-                    "violence": 0.9
-                }
-            }
-        } 
+        result = await self.chat_service.unbind_chat_from_rule_group(chat_id)
+        return result["success"] 

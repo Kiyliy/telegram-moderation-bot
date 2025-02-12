@@ -5,7 +5,7 @@ from src.core.database.models.db_moderation_log import ModerationLog
 from src.core.database.service.ViolationService import ViolationService
 from src.core.database.service.WarningService import WarningService
 from src.core.database.service.ModerationLogService import ModerationLogService
-from src.core.database.service.ChatService import ChatService
+from src.core.database.service.chatsService import ChatService
 
 
 class UserModerationService:

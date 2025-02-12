@@ -1,0 +1,33 @@
+{
+    "moderation": {
+        "rules": {
+            "nsfw": true,
+            "violence": false,
+            "political": false,
+            "spam": true
+        },
+        "sensitivity": {
+            "nsfw": 0.8,
+            "spam": 0.7,
+            "violence": 0.9,
+            "political": 0.6
+        },
+        "auto_actions": {
+            "delete_message": true,
+            "warn_user": true,
+            "notify_admins": true
+        }
+    },
+    "warning_messages": {
+        "nsfw": "⚠️ 您发送的内容包含不当内容，已被自动删除。",
+        "violence": "⚠️ 您发送的内容包含暴力内容，已被自动删除。",
+        "political": "⚠️ 您发送的内容包含敏感内容，已被自动删除。",
+        "spam": "⚠️ 您发送的内容被判定为垃圾信息，已被自动删除。"
+    },
+    "punishment": {
+        "mute_durations": [300, 3600, 86400],
+        "ban_threshold": 9,
+        "warning_reset_days": 30,
+        "max_warnings": 3
+    }
+} 
