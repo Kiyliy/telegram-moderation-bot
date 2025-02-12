@@ -11,6 +11,7 @@ def initialize_database():
     # 从环境变量获取敏感信息
     db_host = os.getenv("DB_HOST")
     root_password = os.getenv("DB_ROOT_PASSWORD")
+    db_port = os.getenv("DB_PORT")
     app_db_user = os.getenv("DB_APP_USER")
     app_db_name = os.getenv("DB_APP_NAME")
     app_db_password = os.getenv("DB_APP_USER_PASSWORD")
@@ -21,7 +22,7 @@ def initialize_database():
     try:
         # 连接到MySQL（不指定数据库）
         conn = mysql.connector.connect(
-            host=db_host, user="root", password=root_password
+            host=db_host, user="root", password=root_password, port=db_port
         )
 
         cursor = conn.cursor()

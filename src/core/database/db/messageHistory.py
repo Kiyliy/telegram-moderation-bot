@@ -13,7 +13,10 @@ class ChatMessageHistory(BaseDatabase):
         super().__init__()
         self.table_name = "chat_messages"
         if os.getenv("SKIP_DB_INIT", "False") != "True":
+            print("创建聊天消息历史记录表...")
             self._create_table()
+        else:
+            print("跳过创建聊天消息历史记录表")
         
     def _create_table(self) -> None:
         """创建表"""

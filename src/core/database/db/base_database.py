@@ -19,6 +19,7 @@ class BaseDatabase:
             "host": os.getenv("DB_HOST"),
             "user": os.getenv("DB_APP_USER"),
             "password": os.getenv("DB_APP_USER_PASSWORD"),
+            "port": int(os.getenv("DB_PORT", 3306)),
             "db": os.getenv("DB_APP_NAME"),
             "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", 10)),
         }

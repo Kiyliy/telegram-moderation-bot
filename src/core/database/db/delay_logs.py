@@ -16,7 +16,10 @@ class UserLogsDatabase(BaseDatabase):
         super().__init__()
         self.table_name = "user_logs"
         if os.getenv("SKIP_DB_INIT", "False") != "True":
+            print("创建用户日志表...")
             self._create_table()
+        else:
+            print("跳过创建用户日志表")
         
     def _create_table(self) -> None:
         """创建表"""
