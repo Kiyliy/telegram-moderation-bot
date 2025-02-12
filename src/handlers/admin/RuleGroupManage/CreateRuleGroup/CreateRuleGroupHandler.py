@@ -7,7 +7,7 @@ from src.handlers.admin.base import AdminBaseHandler
 from src.core.database.service.RuleGroupService import RuleGroupService
 from src.core.database.service.chatsService import ChatService
 
-class RuleGroupCreateHandler(AdminBaseHandler):
+class CreateRuleGroupHandler(AdminBaseHandler):
     
     def __init__(self):
         super().__init__()
@@ -140,4 +140,4 @@ class RuleGroupCreateHandler(AdminBaseHandler):
 
 
 # 初始化处理器
-RuleGroupCreateHandler() 
+CreateRuleGroupHandler() 

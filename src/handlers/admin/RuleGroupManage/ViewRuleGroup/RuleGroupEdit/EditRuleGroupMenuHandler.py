@@ -5,21 +5,23 @@ from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.registry.MessageFilters import MessageFilters
 from src.handlers.admin.base import AdminBaseHandler
 
-class RuleGroupMenuHandler(AdminBaseHandler):
-    """管理员主菜单处理器"""
+class EditRuleGroupMenuHanlder(AdminBaseHandler):
+    """规则组管理中心"""
     
-    def _get_admin_main_menu(self) -> InlineKeyboardMarkup:
+    def _get_admin_main_menu(self, rule_id: str) -> InlineKeyboardMarkup:
         """获取管理员主菜单键盘"""
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("审核设置 🛠", callback_data="admin:settings"),
-             InlineKeyboardButton("查看日志 📋", callback_data="admin:logs")],
-            [InlineKeyboardButton("用户管理 🧑", callback_data="admin:users"),
-             InlineKeyboardButton("群组管理 👥", callback_data="admin:groups")],
-            [InlineKeyboardButton("统计信息 📊", callback_data="admin:stats"),
-             InlineKeyboardButton("刷新设置 🔄", callback_data="admin:refresh")]
+            [InlineKeyboardButton("审核设置 🛠", callback_data=f"admin:rule_group:edit:{rule_id}:moderation_settings"),
+             InlineKeyboardButton("查看日志 📋", callback_data=f"admin:rule_group:edit:{rule_id}:logs")],
+            [InlineKeyboardButton("用户管理 🧑", callback_data=f"admin:rule_group:edit:{rule_id}:users"),
+             InlineKeyboardButton("群组管理 👥", callback_data=f"admin:rule_group:edit:{rule_id}:groups")],
+            [InlineKeyboardButton("统计信息 📊", callback_data=f"admin:rule_group:edit:{rule_id}:stats"),
+             InlineKeyboardButton("刷新设置 🔄", callback_data=f"admin:rule_group:edit:{rule_id}:refresh")],
+            [InlineKeyboardButton("删除规则组 🗑️", callback_data=f"admin:rule_group:edit:{rule_id}:delete")],
+            [InlineKeyboardButton("« 返回", callback_data=f"admin:rule_group:view")]
         ])
 
-    @MessageRegistry.register(MessageFilters.match_regex('^/?admin:rule_group:view$'))
+    @MessageRegistry.register(MessageFilters.match_regex(r'^/?admin:rule_group:edit:.*$'))
     async def handle_admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理 /admin 命令"""
         if not update.effective_user or not self._is_admin(update.effective_user.id):
@@ -92,4 +94,4 @@ class RuleGroupMenuHandler(AdminBaseHandler):
         )
 
 
-RuleGroupMenuHandler()
+EditRuleGroupMenuHanlder()

@@ -6,7 +6,7 @@ from src.core.registry.MessageFilters import MessageFilters
 from src.handlers.admin.base import AdminBaseHandler
 from src.core.database.service.RuleGroupService import RuleGroupService
 from src.core.database.service.chatsService import ChatService
-from src.handlers.admin.RuleGroupManage.RuleGroupActionSelect import RuleGroupActionSelect
+from src.handlers.admin.RuleGroupManage.SelectActionHandler import SelectActionHandler
 from src.core.database.models.db_rule_group import RuleGroup
 
 
@@ -33,7 +33,7 @@ class RuleGroupListHandler(AdminBaseHandler):
             keyboard.append([
                 InlineKeyboardButton(
                     f"📋 {rule_group.name}",
-                    callback_data=f"admin:rule_group:view:{rule_group.rule_id}"
+                    callback_data=f"admin:rule_group:edit:{rule_group.rule_id}"
                 )
             ])
             
@@ -75,7 +75,7 @@ class RuleGroupListHandler(AdminBaseHandler):
                 query,
                 "📋 规则组列表为空\n"
                 "点击「创建规则组」来创建第一个规则组",
-                reply_markup=RuleGroupActionSelect._get_rule_group_menu()
+                reply_markup=SelectActionHandler._get_rule_group_menu()
             )
             return
             

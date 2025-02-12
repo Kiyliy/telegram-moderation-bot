@@ -4,7 +4,7 @@ from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.handlers.admin.base import AdminBaseHandler
 
 
-class RuleGroupActionSelect(AdminBaseHandler):
+class SelectActionHandler(AdminBaseHandler):
     """规则组管理菜单处理器"""
     
     def __init__(self):
@@ -34,4 +34,4 @@ class RuleGroupActionSelect(AdminBaseHandler):
             reply_markup=self._get_rule_group_menu()
         )
     
-RuleGroupActionSelect()
+SelectActionHandler()

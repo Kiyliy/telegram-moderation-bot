@@ -60,3 +60,11 @@
 [INFO] 2025-02-12 13:43:08,620 - member_system_logger - INFO - 用户 mytest 已存在
 [INFO] 2025-02-12 13:47:26,996 - member_system_logger - INFO - 数据库 mytest 已存在
 [INFO] 2025-02-12 13:47:26,999 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-12 14:03:46,096 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-12 14:03:46,098 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-12 14:04:14,406 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-12 14:04:14,408 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-12 14:05:08,345 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-12 14:05:08,347 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-12 14:05:32,052 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-12 14:05:32,054 - member_system_logger - INFO - 用户 mytest 已存在
