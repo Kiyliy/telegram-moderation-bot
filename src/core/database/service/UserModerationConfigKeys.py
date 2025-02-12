@@ -37,3 +37,4 @@ class UserModerationConfigKeys:
         BAN_THRESHOLD: str = 'punishment.ban_threshold'
         WARNING_RESET_DAYS: str = 'punishment.warning_reset_days'
         MAX_WARNINGS: str = 'punishment.max_warnings' 
+    
