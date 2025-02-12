@@ -6,7 +6,7 @@ from src.core.database.service.UserModerationService import UserModerationServic
 from src.core.database.service.chatsService import ChatService
 from datetime import datetime
 from typing import List
-
+from src.core.database.models.db_chat import ChatInfo
 
 class AdminGroupListHandler(AdminBaseHandler):
     """群组列表处理器"""
@@ -22,7 +22,8 @@ class AdminGroupListHandler(AdminBaseHandler):
         current_page: int,
         has_next: bool,
         base_callback: str,
-        back_callback: str = "admin:groups"
+        back_callback: str = "admin:groups",
+        bot_username: str = ""
     ) -> List[List[InlineKeyboardButton]]:
         """生成分页键盘"""
         keyboard = []
@@ -44,9 +45,13 @@ class AdminGroupListHandler(AdminBaseHandler):
             
         # 控制按钮
         keyboard.append([
-            InlineKeyboardButton("刷新", callback_data=f"{base_callback}:{current_page}"),
-            InlineKeyboardButton("« 返回", callback_data=back_callback)
+            InlineKeyboardButton("🔗 添加到群组", url=f"https://t.me/{bot_username}?startgroup=true")
         ])
+        keyboard.append([
+            InlineKeyboardButton("🔄 刷新", callback_data=f"{base_callback}:{current_page}"),
+            InlineKeyboardButton("🔙 返回", callback_data=back_callback)
+        ])
+
         
         return keyboard
 
@@ -61,7 +66,7 @@ class AdminGroupListHandler(AdminBaseHandler):
         page = int(query.data.split(":")[-1])
         
         # 获取所有群组
-        all_groups = await self.chat_service.get_owner_groups(
+        all_groups:List[ChatInfo] = await self.chat_service.get_owner_groups(
             user_id=query.from_user.id
         )
         
@@ -87,15 +92,16 @@ class AdminGroupListHandler(AdminBaseHandler):
         keyboard = self._get_pagination_keyboard(
             current_page=page,
             has_next=has_next,
-            base_callback="admin:groups:list"
+            base_callback="admin:groups:list",
+            bot_username=context.bot.username
         )
         
         # 如果有记录,添加查看详情按钮
         if current_groups:
             for group in current_groups:
-                keyboard.insert(-1, [
+                keyboard.insert(0, [
                     InlineKeyboardButton(
-                        f"查看 {group.title}", 
+                        f"{group.title}", 
                         callback_data=f"admin:groups:detail:{group.chat_id}"
                     )
                 ])
@@ -150,9 +156,10 @@ class AdminGroupListHandler(AdminBaseHandler):
 
         keyboard = [
             [
-                InlineKeyboardButton("解除绑定", callback_data=f"admin:groups:unbind:{chat_id}"),
-                InlineKeyboardButton("查看违规", callback_data=f"admin:groups:violations:{chat_id}:1")
+                InlineKeyboardButton("违规统计", callback_data=f"admin:groups:violations:{chat_id}:1"),
+                InlineKeyboardButton("封禁用户", callback_data=f"admin:groups:banned:{chat_id}:1")
             ],
+            [InlineKeyboardButton("解除绑定", callback_data=f"admin:groups:unbind:{chat_id}")],
             [InlineKeyboardButton("« 返回列表", callback_data="admin:groups:list:1")]
         ]
         

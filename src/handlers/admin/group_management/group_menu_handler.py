@@ -18,15 +18,8 @@ class AdminGroupMenuHandler(AdminBaseHandler):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
-        # 获取机器人邀请链接
-        bot = context.bot
-        bot_username = (await bot.get_me()).username
-
         keyboard = [
             [InlineKeyboardButton("群组列表", callback_data="admin:groups:list:1")],
-            [InlineKeyboardButton("违规统计", callback_data="admin:groups:violations"),
-             InlineKeyboardButton("封禁用户", callback_data="admin:groups:banned")],
-            [InlineKeyboardButton("添加到群组", url=f"https://t.me/{bot_username}?startgroup=true")],
             [InlineKeyboardButton("« 返回", callback_data="admin:back")]
         ]
 

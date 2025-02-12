@@ -27,7 +27,7 @@ class AdminGroupBindingHandler(AdminBaseHandler):
         
         try:
             await self.chat_service.unbind_group_from_user(
-                chat_id=group_id,
+                group_id=group_id,
                 user_id=query.from_user.id
             )
             await query.answer("✅ 解绑成功", show_alert=True)
