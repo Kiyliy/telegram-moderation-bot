@@ -1,4 +1,4 @@
-from core.database.db.user_redempton_codes import userRedemptionCodes
+from src.core.database.db.user_redempton_codes import userRedemptionCodes
 from src.core.logger import logger
 import traceback
 from src.core.database.service.UserService import UserService

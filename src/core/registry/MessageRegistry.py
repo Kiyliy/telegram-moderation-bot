@@ -4,8 +4,9 @@ from telegram.ext import ContextTypes
 from typing import List, Callable, Tuple
 from src.core.registry.registry_base import Registry_Base  # 导入基础注册器
 import traceback
-
-
+import asyncio
+from src.core.database.InfoSaver import InfoSaver
+from src.core.tools.task_keeper import TaskKeeper
 class MessageRegistry:
     _instance = None
     _handlers: List[Tuple[Callable, Callable]] = []  # [(filter_func, handler_func), ...]
@@ -70,6 +71,7 @@ class MessageRegistry:
     @classmethod
     async def dispatch(cls, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """分发消息到对应的处理器"""
+        TaskKeeper.create_task(InfoSaver.info_save(update, context))
         for filter_func, handler in cls._handlers:
             try:
                 if filter_func and filter_func(update):

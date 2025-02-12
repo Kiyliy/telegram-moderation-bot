@@ -5,6 +5,7 @@ from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.MessageFilters import MessageFilters
 from src.handlers.admin.base import AdminBaseHandler
 from src.core.database.service.chatsService import ChatService
+import asyncio
 
 
 class AdminGroupBindingHandler(AdminBaseHandler):
@@ -49,7 +50,7 @@ class AdminGroupBindingHandler(AdminBaseHandler):
         # 检查是否是本机器人被添加
         bot: Bot = context.bot
         bot_id = bot.id
-        
+        print(update)
         for member in update.message.new_chat_members:
             if member.id == bot_id:
                 # 机器人被添加到群组
@@ -57,7 +58,7 @@ class AdminGroupBindingHandler(AdminBaseHandler):
                 user = update.message.from_user
                 
                 # 只有是supergroup才能绑定
-                if chat.type != "supergroup":
+                if chat.type != "supergroup" and chat.api_kwargs.get('all_members_are_administrators', True) == False:
                     await update.message.reply_text(
                         "⚠️ 只能在超级群组中使用本机器人\n"
                         "请将群组升级为超级群组后重试"
@@ -65,9 +66,11 @@ class AdminGroupBindingHandler(AdminBaseHandler):
                     return
                     
                 try:
-                    # 绑定群组到用户
+                    # 绑定群组到用户, 等待1秒, 时序问题
+                    # 此时群组的info, 还没有完全插入到, 数据库中
+                    await asyncio.sleep(1)
                     await self.chat_service.bind_group_to_user(
-                        chat_id=chat.id,
+                        group_id=chat.id,
                         user_id=user.id
                     )
                     

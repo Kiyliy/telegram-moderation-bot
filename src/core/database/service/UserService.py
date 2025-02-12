@@ -1,12 +1,12 @@
 import time
 from src.core.config.config import config
-from core.database.db.UserDatabase import UserDatabase
+from src.core.database.db.UserDatabase import UserDatabase
 
 
 class UserService:
     def __init__(self) -> None:
         self.user_db = UserDatabase()
-        self.config = config()
+        self.config = config
 
     async def add_user(
         self, user_id: int, user_name: str, display_name: str, chat_id: int
@@ -22,16 +22,17 @@ class UserService:
         # 1. 检查用户是否存在, 如果存在, 检查是否需要更新name
         user_info = await self.user_db.get_user_info(user_id=user_id)
         if user_info:
-            # 2.1 如果用户存在, 检查是否需要更新name
-            if (
-                user_info.user_name != user_name
-                or user_info.display_name != display_name
-            ):
-                return await self.user_db.update_user_disply_info(
-                    user_id=user_id, user_name=user_name, display_name=display_name
-                )
-            else:
-                return {"success": True, "message": "User already exists"}
+            # # 2.1 如果用户存在, 检查是否需要更新name
+            # if (
+            #     user_info.user_name != user_name
+            #     or user_info.display_name != display_name
+            # ):
+            #     return await self.user_db.update_user_disply_info(
+            #         user_id=user_id, user_name=user_name, display_name=display_name
+            #     )
+            # else:
+            #     return {"success": True, "message": "User already exists"}
+            return
         # 2. 用户不存在, 添加用户
         rsp = await self.user_db.add_user(
             user_id=user_id,

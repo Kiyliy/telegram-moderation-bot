@@ -1,4 +1,4 @@
-from core.database.db.RedemptionCodesDatabase import (
+from src.core.database.db.RedemptionCodesDatabase import (
     RedemptionCodesDatabase,
     RedemptionCodesInfo,
 )

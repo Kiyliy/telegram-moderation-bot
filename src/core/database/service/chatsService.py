@@ -6,13 +6,13 @@ import json
 
 
 class ChatService:
-    def __init__(self, db: ChatDatabase = None):
+    def __init__(self):
         """
         初始化ChatService
 
         :param db: ChatDatabase实例，如果为None则创建新实例
         """
-        self.db = ChatDatabase() if db is None else db
+        self.db = ChatDatabase()
 
     async def add_chat(
         self, chat_id: int, chat_type: str, title: Optional[str] = None

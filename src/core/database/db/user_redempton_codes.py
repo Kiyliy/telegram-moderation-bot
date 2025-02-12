@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
 import os
 import aiomysql
-from core.database.db.RedemptionCodesDatabase import RedemptionCodesDatabase
-from core.database.db.UserDatabase import UserDatabase
+from src.core.database.db.RedemptionCodesDatabase import RedemptionCodesDatabase
+from src.core.database.db.UserDatabase import UserDatabase
 from src.core.logger import logger
 import traceback
 import time
