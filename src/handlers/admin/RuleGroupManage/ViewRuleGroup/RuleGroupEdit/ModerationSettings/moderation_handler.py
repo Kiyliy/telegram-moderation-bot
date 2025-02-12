@@ -17,28 +17,28 @@ class AdminModerationHandler(AdminBaseHandler):
             [
                 InlineKeyboardButton(
                     "NSFW 检测",
-                    callback_data=f"admin:settings:rules:toggle:{rule_group_id}:nsfw"
+                    callback_data=f"admin:rg:{rule_group_id}:moderation:rules:toggle:nsfw"
                 ),
                 InlineKeyboardButton(
                     "垃圾信息",
-                    callback_data=f"admin:settings:rules:toggle:{rule_group_id}:spam"
+                    callback_data=f"admin:rg:{rule_group_id}:moderation:rules:toggle:spam"
                 )
             ],
             [
                 InlineKeyboardButton(
                     "暴力内容",
-                    callback_data=f"admin:settings:rules:toggle:{rule_group_id}:violence"
+                    callback_data=f"admin:rg:{rule_group_id}:moderation:rules:toggle:violence"
                 ),
                 InlineKeyboardButton(
                     "政治内容",
-                    callback_data=f"admin:settings:rules:toggle:{rule_group_id}:political"
+                    callback_data=f"admin:rg:{rule_group_id}:moderation:rules:toggle:political"
                 )
             ],
             [InlineKeyboardButton("« 返回", callback_data=f"admin:rule_groups:select:{rule_group_id}")]
         ]
         return InlineKeyboardMarkup(keyboard)
         
-    @CallbackRegistry.register(r"^admin:settings:rules:(\w+)$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:moderation:rules$")
     async def handle_rules(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理规则设置"""
         query = update.callback_query
@@ -46,14 +46,14 @@ class AdminModerationHandler(AdminBaseHandler):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
             
-        rule_group_id = query.data.split(":")[-1]
+        rule_group_id = query.data.split(":")[3]
         
         # 获取当前规则状态
         rules = {
-            "nsfw": await rule_group_config.get_config(rule_group_id, configkey.Rules.NSFW),
-            "spam": await rule_group_config.get_config(rule_group_id, configkey.Rules.SPAM),
-            "violence": await rule_group_config.get_config(rule_group_id, configkey.Rules.VIOLENCE),
-            "political": await rule_group_config.get_config(rule_group_id, configkey.Rules.POLITICAL)
+            "nsfw": await rule_group_config.get_config(rule_group_id, configkey.moderation.rules.NSFW),
+            "spam": await rule_group_config.get_config(rule_group_id, configkey.moderation.rules.SPAM),
+            "violence": await rule_group_config.get_config(rule_group_id, configkey.moderation.rules.VIOLENCE),
+            "political": await rule_group_config.get_config(rule_group_id, configkey.moderation.rules.POLITICAL)
         }
         
         text = "⚙️ 审核规则设置\n\n"
@@ -69,7 +69,7 @@ class AdminModerationHandler(AdminBaseHandler):
             reply_markup=self._get_rules_keyboard(rule_group_id)
         )
         
-    @CallbackRegistry.register(r"^admin:settings:rules:toggle:(\w+):(\w+)$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:moderation:rules:toggle:(\w+)$")
     async def handle_rule_toggle(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理规则开关切换"""
         query = update.callback_query

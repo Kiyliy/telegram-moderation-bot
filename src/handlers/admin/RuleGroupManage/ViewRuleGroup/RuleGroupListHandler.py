@@ -33,7 +33,7 @@ class RuleGroupListHandler(AdminBaseHandler):
             keyboard.append([
                 InlineKeyboardButton(
                     f"📋 {rule_group.name}",
-                    callback_data=f"admin:rule_group:edit:{rule_group.rule_id}"
+                    callback_data=f"admin:rg:{rule_group.rule_id}"
                 )
             ])
             
@@ -41,11 +41,11 @@ class RuleGroupListHandler(AdminBaseHandler):
         nav_buttons = []
         if page > 0:
             nav_buttons.append(
-                InlineKeyboardButton("⬅️", callback_data=f"admin:rule_group:list:{page-1}")
+                InlineKeyboardButton("⬅️", callback_data=f"admin:rg:list:{page-1}")
             )
         if page < total_pages - 1:
             nav_buttons.append(
-                InlineKeyboardButton("➡️", callback_data=f"admin:rule_group:list:{page+1}")
+                InlineKeyboardButton("➡️", callback_data=f"admin:rg:list:{page+1}")
             )
         if nav_buttons:
             keyboard.append(nav_buttons)
@@ -55,7 +55,7 @@ class RuleGroupListHandler(AdminBaseHandler):
         
         return InlineKeyboardMarkup(keyboard)
 
-    @CallbackRegistry.register(r"^admin:rule_group:list(?::(\d+))?$")
+    @CallbackRegistry.register(r"^admin:rg:list(?::(\d+))?$")
     async def handle_list_rule_groups(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理查看规则组列表"""
         query = update.callback_query

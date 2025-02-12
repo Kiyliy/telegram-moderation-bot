@@ -22,21 +22,21 @@ class AdminWarningHandler(AdminBaseHandler):
             [
                 InlineKeyboardButton(
                     "NSFW 警告",
-                    callback_data=f"admin:settings:warning:edit:{rule_group_id}:nsfw"
+                    callback_data=f"admin:settings:warning:{rule_group_id}:nsfw"
                 ),
                 InlineKeyboardButton(
                     "垃圾信息",
-                    callback_data=f"admin:settings:warning:edit:{rule_group_id}:spam"
+                    callback_data=f"admin:settings:warning:{rule_group_id}:spam"
                 )
             ],
             [
                 InlineKeyboardButton(
                     "暴力内容",
-                    callback_data=f"admin:settings:warning:edit:{rule_group_id}:violence"
+                    callback_data=f"admin:settings:warning:{rule_group_id}:violence"
                 ),
                 InlineKeyboardButton(
                     "政治内容",
-                    callback_data=f"admin:settings:warning:edit:{rule_group_id}:political"
+                    callback_data=f"admin:settings:warning:{rule_group_id}:political"
                 )
             ],
             [InlineKeyboardButton("« 返回", callback_data=f"admin:rule_groups:select:{rule_group_id}")]
@@ -74,7 +74,7 @@ class AdminWarningHandler(AdminBaseHandler):
             reply_markup=self._get_warning_keyboard(rule_group_id)
         )
         
-    @CallbackRegistry.register(r"^admin:settings:warning:edit:(\w+):(\w+)$")
+    @CallbackRegistry.register(r"^admin:settings:warning:(\w+):(\w+)$")
     async def handle_warning_edit(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理警告消息编辑"""
         query = update.callback_query

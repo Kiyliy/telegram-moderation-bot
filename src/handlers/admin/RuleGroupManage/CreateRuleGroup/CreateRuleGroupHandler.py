@@ -13,7 +13,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
         super().__init__()
         self.rule_group_service = RuleGroupService()
         
-    @CallbackRegistry.register(r"^admin:rule_group:create$")
+    @CallbackRegistry.register(r"^admin:rg:create$")
     async def handle_create_rule_group(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理创建规则组"""
         query: CallbackQuery = update.callback_query
@@ -26,7 +26,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
             "✏️ 请输入规则组名称：\n"
             "（回复此消息输入名称，发送 /cancel 取消创建）",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("取消", callback_data="admin:rule_group:create:cancel")
+                InlineKeyboardButton("取消", callback_data="admin:rg:create:cancel")
             ]])
         )
 
@@ -47,7 +47,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
             "✏️ 请输入规则组描述：\n"
             "（回复此消息输入描述，发送 /skip 跳过）",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("跳过", callback_data=f"admin:rule_group:create:skip:{name}")
+                InlineKeyboardButton("跳过", callback_data=f"admin:rg:create:skip:{name}")
             ]])
         )
 
@@ -75,7 +75,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
                 "2. 配置规则组的审核设置\n"
                 "3. 查看规则组统计信息",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("配置规则组", callback_data=f"admin:rule_group:edit:{rule_group.id}")
+                    InlineKeyboardButton("配置规则组", callback_data=f"admin:rg:{rule_group.id}")
                 ]])
             )
         else:
@@ -86,7 +86,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
                 ]])
             )
 
-    @CallbackRegistry.register(r"^admin:rule_group:create:skip:(.+)$")
+    @CallbackRegistry.register(r"^admin:rg:create:skip:(.+)$")
     async def handle_skip_description(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理跳过描述"""
         query = update.callback_query
@@ -111,7 +111,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
                 "2. 配置规则组的审核设置\n"
                 "3. 查看规则组统计信息",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("配置规则组", callback_data=f"admin:rule_group:edit:{rule_group.id}")
+                    InlineKeyboardButton("配置规则组", callback_data=f"admin:rg:{rule_group.id}")
                 ]])
             )
         else:
@@ -122,7 +122,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
                 ]])
             )
 
-    @CallbackRegistry.register(r"^admin:rule_group:create:cancel$")
+    @CallbackRegistry.register(r"^admin:rg:create:cancel$")
     async def handle_cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理取消创建"""
         query = update.callback_query

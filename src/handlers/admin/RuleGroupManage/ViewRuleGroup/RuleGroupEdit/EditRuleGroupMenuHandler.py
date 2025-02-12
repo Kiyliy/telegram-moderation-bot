@@ -1,4 +1,4 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from telegram.ext import ContextTypes
 from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.CallbackRegistry import CallbackRegistry
@@ -11,44 +11,48 @@ class EditRuleGroupMenuHanlder(AdminBaseHandler):
     def _get_admin_main_menu(self, rule_id: str) -> InlineKeyboardMarkup:
         """获取管理员主菜单键盘"""
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("审核设置 🛠", callback_data=f"admin:rule_group:edit:{rule_id}:moderation_settings"),
-             InlineKeyboardButton("查看日志 📋", callback_data=f"admin:rule_group:edit:{rule_id}:logs")],
-            [InlineKeyboardButton("用户管理 🧑", callback_data=f"admin:rule_group:edit:{rule_id}:users"),
-             InlineKeyboardButton("群组管理 👥", callback_data=f"admin:rule_group:edit:{rule_id}:groups")],
-            [InlineKeyboardButton("统计信息 📊", callback_data=f"admin:rule_group:edit:{rule_id}:stats"),
-             InlineKeyboardButton("刷新设置 🔄", callback_data=f"admin:rule_group:edit:{rule_id}:refresh")],
-            [InlineKeyboardButton("删除规则组 🗑️", callback_data=f"admin:rule_group:edit:{rule_id}:delete")],
-            [InlineKeyboardButton("« 返回", callback_data=f"admin:rule_group:view")]
+            [InlineKeyboardButton("审核设置 🛠", callback_data=f"admin:rg:{rule_id}:moderation"),
+             InlineKeyboardButton("查看日志 📋", callback_data=f"admin:rg:{rule_id}:logs")],
+            [InlineKeyboardButton("用户管理 🧑", callback_data=f"admin:rg:{rule_id}:users"),
+             InlineKeyboardButton("群组管理 👥", callback_data=f"admin:rg:{rule_id}:groups")],
+            [InlineKeyboardButton("统计信息 📊", callback_data=f"admin:rg:{rule_id}:stats"),
+             InlineKeyboardButton("刷新设置 🔄", callback_data=f"admin:rg:{rule_id}:refresh")],
+            [InlineKeyboardButton("删除规则组 🗑️", callback_data=f"admin:rg:{rule_id}:delete")],
+            [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:list:0")]
         ])
-
-    @MessageRegistry.register(MessageFilters.match_regex(r'^/?admin:rule_group:edit:.*$'))
+        
+    @CallbackRegistry.register(r"^admin:rg:.{16}$")
     async def handle_admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /admin 命令"""
-        if not update.effective_user or not self._is_admin(update.effective_user.id):
-            await update.message.reply_text("⚠️ 抱歉，您没有管理员权限。")
+        """处理规则组编辑主菜单"""
+        query: CallbackQuery = update.callback_query
+        rule_id = query.data.split(":")[-1]
+        if not query or not self._is_admin(query.from_user.id):
+            await query.answer("⚠️ 抱歉，您没有管理员权限。")
             return
 
-        await update.message.reply_text(
-            "👋 欢迎使用管理员控制面板\n"
-            "请选择以下功能：",
-            reply_markup=self._get_admin_main_menu()
+        await query.edit_message_text(
+            f"👋 欢迎使用规则组控制面板\n"
+            f"当前的规则组编号: {rule_id}\n"
+            f"请选择以下功能：",
+            reply_markup=self._get_admin_main_menu(rule_id)
         )
 
-    @CallbackRegistry.register(r"^admin:settings$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:moderation$")
     async def handle_settings(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理审核设置回调"""
         query = update.callback_query
+        rule_id = query.data.split(":")[3]
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
         keyboard = [
-            [InlineKeyboardButton("审核规则设置", callback_data="admin:settings:rules"),
-             InlineKeyboardButton("敏感度设置", callback_data="admin:settings:sensitivity")],
-            [InlineKeyboardButton("警告消息设置", callback_data="admin:settings:warning"),
-             InlineKeyboardButton("自动处理设置", callback_data="admin:settings:auto")],
-            [InlineKeyboardButton("惩罚措施设置", callback_data="admin:settings:punishment")],
-            [InlineKeyboardButton("« 返回", callback_data="admin:back")]
+            [InlineKeyboardButton("审核规则设置", callback_data=f"admin:rg:{rule_id}:moderation:rules"),
+             InlineKeyboardButton("敏感度设置", callback_data=f"admin:rg:{rule_id}:moderation:sensitivity")],
+            [InlineKeyboardButton("警告消息设置", callback_data=f"admin:rg:{rule_id}:moderation:warning"),
+             InlineKeyboardButton("自动处理设置", callback_data=f"admin:rg:{rule_id}:moderation:auto")],
+            [InlineKeyboardButton("惩罚措施设置", callback_data=f"admin:rg:{rule_id}:moderation:punishment")],
+            [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_id}")]
         ]
 
         await self._safe_edit_message(
@@ -58,10 +62,11 @@ class EditRuleGroupMenuHanlder(AdminBaseHandler):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    @CallbackRegistry.register(r"^admin:refresh$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:refresh$")
     async def handle_refresh(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理刷新设置回调"""
         query = update.callback_query
+        rule_id = query.data.split(":")[3]
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
@@ -73,14 +78,15 @@ class EditRuleGroupMenuHanlder(AdminBaseHandler):
         # 返回主菜单
         await self._safe_edit_message(
             query,
-            "👋 欢迎使用管理员控制面板\n"
+            "👋 欢迎使用规则组控制面板\n"
+            f"当前的规则组编号: {rule_id}\n"
             "请选择以下功能：",
-            reply_markup=self._get_admin_main_menu()
+            reply_markup=self._get_admin_main_menu(rule_id)
         )
 
-    @CallbackRegistry.register(r"^admin:back$")
+    @CallbackRegistry.register(r"^admin:rg:edit$")
     async def handle_back(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理返回主菜单回调"""
+        """处理返回规则组列表回调"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)

@@ -14,8 +14,8 @@ class SelectActionHandler(AdminBaseHandler):
     def _get_rule_group_menu(cls) -> InlineKeyboardMarkup:
         """获取规则组管理菜单键盘"""
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("创建规则组 ➕", callback_data="admin:rule_group:create")],
-            [InlineKeyboardButton("查看规则组 📋", callback_data="admin:rule_group:list")],
+            [InlineKeyboardButton("创建规则组 ➕", callback_data="admin:rg:create")],
+            [InlineKeyboardButton("查看规则组 📋", callback_data="admin:rg:list")],
             [InlineKeyboardButton("« 返回", callback_data="admin:back")]
         ])
         
