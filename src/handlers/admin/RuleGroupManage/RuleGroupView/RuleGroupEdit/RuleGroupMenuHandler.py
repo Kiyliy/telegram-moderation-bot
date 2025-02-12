@@ -19,7 +19,7 @@ class RuleGroupMenuHandler(AdminBaseHandler):
              InlineKeyboardButton("刷新设置 🔄", callback_data="admin:refresh")]
         ])
 
-    # @MessageRegistry.register(MessageFilters.match_regex('^/?admin$'))
+    @MessageRegistry.register(MessageFilters.match_regex('^/?admin:rule_group:view$'))
     async def handle_admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理 /admin 命令"""
         if not update.effective_user or not self._is_admin(update.effective_user.id):

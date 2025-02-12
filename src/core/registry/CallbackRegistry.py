@@ -53,3 +53,4 @@ class CallbackRegistry:
                 finally:
                     await query.answer()
                 return
+        print(f"[Callback] {data} not found")

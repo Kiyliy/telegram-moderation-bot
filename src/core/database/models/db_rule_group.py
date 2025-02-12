@@ -7,6 +7,7 @@ import json
 class RuleGroup:
     """规则组模型"""
     id: Optional[int] = None
+    rule_id: Optional[str] = None
     name: str = ""
     owner_id: int = 0
     description: Optional[str] = None
@@ -22,12 +23,13 @@ class RuleGroup:
             
         return cls(
             id=row[0],
-            name=row[1],
-            owner_id=row[2],
-            description=row[3],
-            settings=json.loads(row[4]) if row[4] else None,
-            created_at=row[5],
-            updated_at=row[6]
+            rule_id=row[1],
+            name=row[2],
+            owner_id=row[3],
+            description=row[4],
+            settings=json.loads(row[5]) if row[5] else None,
+            created_at=row[6],
+            updated_at=row[7]
         )
 
     @classmethod
@@ -39,6 +41,7 @@ class RuleGroup:
         """转换为字典"""
         return {
             'id': self.id,
+            'rule_id': self.rule_id,
             'name': self.name,
             'owner_id': self.owner_id,
             'description': self.description,

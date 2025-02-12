@@ -1,5 +1,5 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, ConversationHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from telegram.ext import ContextTypes
 from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.registry.MessageFilters import MessageFilters
@@ -10,56 +10,53 @@ from src.core.database.service.chatsService import ChatService
 class RuleGroupCreateHandler(AdminBaseHandler):
     
     def __init__(self):
-        super.__init__()
+        super().__init__()
+        self.rule_group_service = RuleGroupService()
         
     @CallbackRegistry.register(r"^admin:rule_group:create$")
     async def handle_create_rule_group(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理创建规则组"""
-        query = update.callback_query
+        query: CallbackQuery = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
         await query.answer()
-        # 存储用户ID
-        context.user_data['creating_rule_group'] = True
-        
         await query.edit_message_text(
             "✏️ 请输入规则组名称：\n"
-            "（发送 /cancel 取消创建）"
+            "（回复此消息输入名称，发送 /cancel 取消创建）",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("取消", callback_data="admin:rule_group:create:cancel")
+            ]])
         )
 
-    @MessageRegistry.register(MessageFilters.text & ~MessageFilters.command)
+    @MessageRegistry.register(MessageFilters.match_reply_msg_regex(r".*请输入规则组名称.*"))
     async def handle_rule_group_name(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理规则组名称输入"""
-        if not context.user_data.get('creating_rule_group'):
-            return
-            
         name = update.message.text
         if len(name) > 50:
             await update.message.reply_text(
                 "❌ 规则组名称过长，请不要超过50个字符\n"
-                "请重新输入："
+                "请重新输入名称："
             )
-            return WAITING_NAME
-            
-        # 存储名称
-        context.user_data['rule_group_name'] = name
-        
-        await update.message.reply_text(
-            "✏️ 请输入规则组描述：\n"
-            "（发送 /skip 跳过，/cancel 取消）"
-        )
-        return WAITING_DESCRIPTION
-
-    @MessageRegistry.register(MessageFilters.text & ~MessageFilters.command)
-    async def handle_rule_group_description(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理规则组描述输入"""
-        if not context.user_data.get('creating_rule_group'):
             return
             
+        # 请求输入描述
+        await update.message.reply_text(
+            f"规则组名称: {name}\n\n"
+            "✏️ 请输入规则组描述：\n"
+            "（回复此消息输入描述，发送 /skip 跳过）",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("跳过", callback_data=f"admin:rule_group:create:skip:{name}")
+            ]])
+        )
+
+    @MessageRegistry.register(MessageFilters.match_reply_msg_regex(r".*请输入规则组描述.*"))
+    async def handle_rule_group_description(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理规则组描述输入"""
         description = update.message.text
-        name = context.user_data.get('rule_group_name')
+        # 从回复的消息中提取名称
+        name = update.message.reply_to_message.text.split("规则组名称: ")[1].split("\n")[0]
         
         # 创建规则组
         rule_group = await self.rule_group_service.create_rule_group(
@@ -77,100 +74,70 @@ class RuleGroupCreateHandler(AdminBaseHandler):
                 "1. 绑定群组到此规则组\n"
                 "2. 配置规则组的审核设置\n"
                 "3. 查看规则组统计信息",
-                reply_markup=self._get_rule_group_menu()
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("配置规则组", callback_data=f"admin:rule_group:edit:{rule_group.id}")
+                ]])
             )
         else:
             await update.message.reply_text(
                 "❌ 创建失败，请重试",
-                reply_markup=self._get_rule_group_menu()
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("返回", callback_data="admin:rule_group")
+                ]])
             )
-            
-        # 清理上下文
-        context.user_data.clear()
-        return ConversationHandler.END
 
-    @MessageRegistry.register(MessageFilters.command & MessageFilters.match_command(['skip']))
+    @CallbackRegistry.register(r"^admin:rule_group:create:skip:(.+)$")
     async def handle_skip_description(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理跳过描述"""
-        if not context.user_data.get('creating_rule_group'):
+        query = update.callback_query
+        if not self._is_admin(query.from_user.id):
+            await query.answer("⚠️ 没有权限", show_alert=True)
             return
             
-        name = context.user_data.get('rule_group_name')
+        name = query.data.split(":")[-1]
         
         # 创建规则组
         rule_group = await self.rule_group_service.create_rule_group(
             name=name,
-            owner_id=update.effective_user.id
+            owner_id=query.from_user.id
         )
         
         if rule_group:
-            await update.message.reply_text(
+            await query.edit_message_text(
                 f"✅ 规则组「{name}」创建成功！\n"
                 f"ID: {rule_group.id}\n\n"
                 "现在您可以：\n"
                 "1. 绑定群组到此规则组\n"
                 "2. 配置规则组的审核设置\n"
                 "3. 查看规则组统计信息",
-                reply_markup=self._get_rule_group_menu()
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("配置规则组", callback_data=f"admin:rule_group:edit:{rule_group.id}")
+                ]])
             )
         else:
-            await update.message.reply_text(
+            await query.edit_message_text(
                 "❌ 创建失败，请重试",
-                reply_markup=self._get_rule_group_menu()
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("返回", callback_data="admin:rule_group")
+                ]])
             )
-            
-        # 清理上下文
-        context.user_data.clear()
-        return ConversationHandler.END
 
-    @MessageRegistry.register(MessageFilters.command & MessageFilters.match_command(['cancel']))
+    @CallbackRegistry.register(r"^admin:rule_group:create:cancel$")
     async def handle_cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理取消创建"""
-        if not context.user_data.get('creating_rule_group'):
-            return
-            
-        await update.message.reply_text(
-            "❌ 已取消创建规则组",
-            reply_markup=self._get_rule_group_menu()
-        )
-        
-        # 清理上下文
-        context.user_data.clear()
-        return ConversationHandler.END
-
-    @CallbackRegistry.register(r"^admin:rule_group:list(?::(\d+))?$")
-    async def handle_list_rule_groups(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理查看规则组列表"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
-
-        # 获取页码
-        page = int(query.data.split(":")[-1]) if ":" in query.data else 0
-        
-        # 获取规则组列表
-        rule_groups = await self.rule_group_service.get_owner_rule_groups(query.from_user.id)
-        
-        if not rule_groups:
-            await query.answer("还没有创建任何规则组")
-            await self._safe_edit_message(
-                query,
-                "📋 规则组列表为空\n"
-                "点击「创建规则组」来创建第一个规则组",
-                reply_markup=self._get_rule_group_menu()
-            )
-            return
             
-        # 构建消息
-        text = "📋 规则组列表\n\n"
-        keyboard = self._get_rule_group_list_keyboard(rule_groups, page)
-        
-        await self._safe_edit_message(
-            query,
-            text,
-            reply_markup=keyboard
+        await query.edit_message_text(
+            "❌ 已取消创建规则组",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("返回", callback_data="admin:rule_group")
+            ]])
         )
 
+
+
 # 初始化处理器
-RuleGroupListHandler() 
+RuleGroupCreateHandler() 

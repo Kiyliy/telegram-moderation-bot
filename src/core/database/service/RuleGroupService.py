@@ -34,9 +34,9 @@ class RuleGroupService:
         Returns:
             创建的规则组对象
         """
-        # 如果没有提供设置，使用默认设置
-        if settings is None:
-            settings = await self.get_default_settings()
+        # # 如果没有提供设置，使用默认设置
+        # if settings is None:
+        #     settings = await self.get_default_settings()
             
         # 创建规则组
         rule_id = await self.rule_group_db.create_rule_group(
