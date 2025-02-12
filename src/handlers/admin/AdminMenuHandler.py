@@ -24,7 +24,6 @@ class AdminMenuHandler(AdminBaseHandler):
         if not self._is_admin(update.effective_user.id):
             return
             
-        print("aaaaaaaaaaaa")
         await update.message.reply_text(
             "👋 欢迎使用管理员控制面板\n"
             "请选择要进行的操作:",

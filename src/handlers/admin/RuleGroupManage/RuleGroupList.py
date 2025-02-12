@@ -11,7 +11,7 @@ from src.core.database.service.chatsService import ChatService
 WAITING_NAME = 1
 WAITING_DESCRIPTION = 2
 
-class RuleGroupMenuHandler(AdminBaseHandler):
+class RuleGroupListHandler(AdminBaseHandler):
     """规则组管理菜单处理器"""
     
     def __init__(self):
@@ -238,4 +238,4 @@ class RuleGroupMenuHandler(AdminBaseHandler):
         )
 
 # 初始化处理器
-RuleGroupMenuHandler() 
+RuleGroupListHandler() 
