@@ -18,16 +18,16 @@ class ModerationSettingsMenuHandler(AdminBaseHandler):
         """获取规则组菜单"""
         keyboard = [
             [
-                InlineKeyboardButton("审核规则", callback_data=f"admin:rg:{rule_group_id}:moderation:rules"),
-                InlineKeyboardButton("敏感度", callback_data=f"admin:rg:{rule_group_id}:moderation:sensitivity")
+                InlineKeyboardButton("审核规则", callback_data=f"admin:rg:{rule_group_id}:mo:rules"),
+                InlineKeyboardButton("敏感度", callback_data=f"admin:rg:{rule_group_id}:mo:sensitivity")
             ],
             [
-                InlineKeyboardButton("警告消息", callback_data=f"admin:rg:{rule_group_id}:moderation:warning"),
-                InlineKeyboardButton("自动处理", callback_data=f"admin:rg:{rule_group_id}:moderation:auto")
+                InlineKeyboardButton("警告消息", callback_data=f"admin:rg:{rule_group_id}:mo:warning"),
+                InlineKeyboardButton("自动处理", callback_data=f"admin:rg:{rule_group_id}:mo:auto")
             ],
             [
-                InlineKeyboardButton("惩罚措施", callback_data=f"admin:rg:{rule_group_id}:moderation:punishment"),
-                InlineKeyboardButton("群组管理", callback_data=f"admin:rg:{rule_group_id}:moderation:groups")
+                InlineKeyboardButton("惩罚措施", callback_data=f"admin:rg:{rule_group_id}:mo:punishment"),
+                InlineKeyboardButton("群组管理", callback_data=f"admin:rg:{rule_group_id}:mo:groups")
             ],
             [InlineKeyboardButton("« 返回规则组列表", callback_data="admin:rule_groups:list")]
         ]

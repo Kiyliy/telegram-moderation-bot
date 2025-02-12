@@ -11,7 +11,7 @@ class EditRuleGroupMenuHanlder(AdminBaseHandler):
     def _get_admin_main_menu(self, rule_id: str) -> InlineKeyboardMarkup:
         """获取管理员主菜单键盘"""
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("审核设置 🛠", callback_data=f"admin:rg:{rule_id}:moderation"),
+            [InlineKeyboardButton("审核设置 🛠", callback_data=f"admin:rg:{rule_id}:mo"),
              InlineKeyboardButton("查看日志 📋", callback_data=f"admin:rg:{rule_id}:logs")],
             [InlineKeyboardButton("用户管理 🧑", callback_data=f"admin:rg:{rule_id}:users"),
              InlineKeyboardButton("群组管理 👥", callback_data=f"admin:rg:{rule_id}:groups")],
@@ -38,7 +38,7 @@ class EditRuleGroupMenuHanlder(AdminBaseHandler):
             reply_markup=self._get_admin_main_menu(rule_id)
         )
 
-    @CallbackRegistry.register(r"^admin:rg:.{16}:moderation(:menu)?$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:mo(:menu)?$")
     async def handle_settings(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理审核设置回调"""
         query = update.callback_query
@@ -48,11 +48,11 @@ class EditRuleGroupMenuHanlder(AdminBaseHandler):
             return
 
         keyboard = [
-            [InlineKeyboardButton("审核规则设置", callback_data=f"admin:rg:{rule_id}:moderation:rules"),
-             InlineKeyboardButton("敏感度设置", callback_data=f"admin:rg:{rule_id}:moderation:sensitivity")],
-            [InlineKeyboardButton("警告消息设置", callback_data=f"admin:rg:{rule_id}:moderation:warning"),
-             InlineKeyboardButton("自动处理设置", callback_data=f"admin:rg:{rule_id}:moderation:auto")],
-            [InlineKeyboardButton("惩罚措施设置", callback_data=f"admin:rg:{rule_id}:moderation:punishment")],
+            [InlineKeyboardButton("审核规则设置", callback_data=f"admin:rg:{rule_id}:mo:rules"),
+             InlineKeyboardButton("敏感度设置", callback_data=f"admin:rg:{rule_id}:mo:sensitivity")],
+            [InlineKeyboardButton("警告消息设置", callback_data=f"admin:rg:{rule_id}:mo:warning"),
+             InlineKeyboardButton("自动处理设置", callback_data=f"admin:rg:{rule_id}:mo:auto")],
+            [InlineKeyboardButton("惩罚措施设置", callback_data=f"admin:rg:{rule_id}:mo:punishment")],
             [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_id}")]
         ]
 

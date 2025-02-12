@@ -10,7 +10,7 @@ from src.core.database.service.RuleGroupConfig import rule_group_config
 from src.core.database.service.UserModerationConfigKeys import UserModerationConfigKeys as configkey
 import re
 
-class AdminWarningHandler(AdminBaseHandler):
+class WarningHandler(AdminBaseHandler):
     """警告消息设置处理器"""
     
     def __init__(self):
@@ -22,43 +22,43 @@ class AdminWarningHandler(AdminBaseHandler):
             [
                 InlineKeyboardButton(
                     "NSFW 警告",
-                    callback_data=f"admin:settings:warning:{rule_group_id}:nsfw"
+                    callback_data=f"admin:rg:{rule_group_id}:mo:warning:nsfw"
                 ),
                 InlineKeyboardButton(
                     "垃圾信息",
-                    callback_data=f"admin:settings:warning:{rule_group_id}:spam"
+                    callback_data=f"admin:rg:{rule_group_id}:mo:warning:spam"
                 )
             ],
             [
                 InlineKeyboardButton(
                     "暴力内容",
-                    callback_data=f"admin:settings:warning:{rule_group_id}:violence"
+                    callback_data=f"admin:rg:{rule_group_id}:mo:warning:violence"
                 ),
                 InlineKeyboardButton(
                     "政治内容",
-                    callback_data=f"admin:settings:warning:{rule_group_id}:political"
+                    callback_data=f"admin:rg:{rule_group_id}:mo:warning:political"
                 )
             ],
-            [InlineKeyboardButton("« 返回", callback_data=f"admin:rule_groups:select:{rule_group_id}")]
+            [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_group_id}:mo")]
         ]
         return InlineKeyboardMarkup(keyboard)
         
-    @CallbackRegistry.register(r"^admin:settings:warning:(\w+)$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:mo:warning$")
     async def handle_warning(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理警告消息设置"""
+        """查看当前规则组的警告消息设置"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
             
-        rule_group_id = query.data.split(":")[-1]
+        rule_group_id = query.data.split(":")[2]
         
         # 获取当前警告消息
         warnings = {
-            "nsfw": await rule_group_config.get_config(rule_group_id, configkey.WarningMessages.NSFW),
-            "spam": await rule_group_config.get_config(rule_group_id, configkey.WarningMessages.SPAM),
-            "violence": await rule_group_config.get_config(rule_group_id, configkey.WarningMessages.VIOLENCE),
-            "political": await rule_group_config.get_config(rule_group_id, configkey.WarningMessages.POLITICAL)
+            "nsfw": await rule_group_config.get_config(rule_group_id, configkey.warning_messages.NSFW),
+            "spam": await rule_group_config.get_config(rule_group_id, configkey.warning_messages.SPAM),
+            "violence": await rule_group_config.get_config(rule_group_id, configkey.warning_messages.VIOLENCE),
+            "political": await rule_group_config.get_config(rule_group_id, configkey.warning_messages.POLITICAL)
         }
         
         text = "⚙️ 警告消息设置\n\n"
@@ -74,36 +74,32 @@ class AdminWarningHandler(AdminBaseHandler):
             reply_markup=self._get_warning_keyboard(rule_group_id)
         )
         
-    @CallbackRegistry.register(r"^admin:settings:warning:(\w+):(\w+)$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:mo:warning:(\w+)$")
     async def handle_warning_edit(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理警告消息编辑"""
+        """进入警告消息的编辑状态"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
             
-        rule_group_id = query.data.split(":")[-2]
+        rule_group_id = query.data.split(":")[2]
         rule_type = query.data.split(":")[-1]
         
         # 获取当前警告消息
         current = await rule_group_config.get_config(
             rule_group_id,
-            getattr(configkey.WarningMessages, rule_type.upper())
+            getattr(configkey.warning_messages, rule_type.upper())
         )
         
-        # 保存编辑状态
-        context.user_data["warning_edit"] = {
-            "rule_group_id": rule_group_id,
-            "rule_type": rule_type
-        }
-        
         text = f"⚙️ {rule_type.upper()} 警告消息设置\n\n"
+        text += f"rule_group_id: {rule_group_id}\n"
         text += f"当前消息:\n{current}\n\n"
-        text += "请发送新的警告消息:"
+        text += "✏️ 请输入新的警告消息:\n"
+        text += "（回复此消息输入新的警告消息）"
         
         keyboard = [[InlineKeyboardButton(
             "« 返回",
-            callback_data=f"admin:settings:warning:{rule_group_id}"
+            callback_data=f"admin:rg:{rule_group_id}:mo:warning"
         )]]
         
         await self._safe_edit_message(
@@ -112,35 +108,30 @@ class AdminWarningHandler(AdminBaseHandler):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         
+    @MessageRegistry.register(MessageFilters.match_reply_msg_regex(r".*请输入新的警告消息.*"))
     async def handle_warning_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理警告消息输入"""
         if not self._is_admin(update.message.from_user.id):
             await update.message.reply_text("⚠️ 没有权限")
             return
             
-        # 检查是否在编辑状态
-        if "warning_edit" not in context.user_data:
-            return
-            
-        edit_state = context.user_data["warning_edit"]
-        rule_group_id = edit_state["rule_group_id"]
-        rule_type = edit_state["rule_type"]
+        # 从回复的消息中提取rule_type
+        reply_msg = update.message.reply_to_message.text
+        rule_type = re.search(r"⚙️ (\w+) 警告消息设置", reply_msg).group(1).lower()
+        rule_group_id = re.search(r"rule_group_id: (\w+)", reply_msg).group(1)
         
         # 更新警告消息
         await rule_group_config.set_config(
             rule_group_id,
-            getattr(configkey.WarningMessages, rule_type.upper()),
+            getattr(configkey.warning_messages, rule_type.upper()),
             update.message.text
         )
-        
-        # 清除编辑状态
-        del context.user_data["warning_edit"]
         
         # 发送确认消息
         text = f"✅ 已更新 {rule_type} 警告消息"
         keyboard = [[InlineKeyboardButton(
             "返回设置",
-            callback_data=f"admin:settings:warning:{rule_group_id}"
+            callback_data=f"admin:rg:{rule_group_id}:mo:warning"
         )]]
         
         await update.message.reply_text(
@@ -150,4 +141,4 @@ class AdminWarningHandler(AdminBaseHandler):
 
 
 # 初始化处理器
-AdminWarningHandler() 
+WarningHandler() 
