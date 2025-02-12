@@ -1,76 +1,105 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from src.core.registry.CallbackRegistry import CallbackRegistry
-from src.core.config.config import config
-from data.ConfigKeys import ConfigKeys as configkey
-from ..base import AdminBaseHandler
+from src.handlers.admin.base import AdminBaseHandler
+from src.core.database.service.RuleGroupConfig import rule_group_config
+from src.core.database.service.UserModerationConfigKeys import UserModerationConfigKeys as configkey
 
 class AdminModerationHandler(AdminBaseHandler):
     """管理员审核设置处理器"""
     
     def __init__(self):
         super().__init__()
-        self._load_moderation_settings()
         
-    def _load_moderation_settings(self) -> None:
-        """加载审核设置"""
-        self.moderation_rules = {
-            'nsfw': config.get_config(configkey.bot.settings.moderation.rules.NSFW, True),
-            'violence': config.get_config(configkey.bot.settings.moderation.rules.VIOLENCE, True),
-            'political': config.get_config(configkey.bot.settings.moderation.rules.POLITICAL, True),
-            'spam': config.get_config(configkey.bot.settings.moderation.rules.SPAM, True)
-        }
-        self.sensitivity = {
-            'nsfw': config.get_config(configkey.bot.settings.moderation.sensitivity.NSFW, 0.7),
-            'violence': config.get_config(configkey.bot.settings.moderation.sensitivity.VIOLENCE, 0.8),
-            'political': config.get_config(configkey.bot.settings.moderation.sensitivity.POLITICAL, 0.6),
-            'spam': config.get_config(configkey.bot.settings.moderation.sensitivity.SPAM, 0.5)
-        }
-
-    @CallbackRegistry.register(r"^admin:settings:rules$")
-    async def handle_rules_settings(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理规则设置回调"""
+    def _get_rules_keyboard(self, rule_group_id: str) -> InlineKeyboardMarkup:
+        """获取规则设置键盘"""
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "NSFW 检测",
+                    callback_data=f"admin:settings:rules:toggle:{rule_group_id}:nsfw"
+                ),
+                InlineKeyboardButton(
+                    "垃圾信息",
+                    callback_data=f"admin:settings:rules:toggle:{rule_group_id}:spam"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "暴力内容",
+                    callback_data=f"admin:settings:rules:toggle:{rule_group_id}:violence"
+                ),
+                InlineKeyboardButton(
+                    "政治内容",
+                    callback_data=f"admin:settings:rules:toggle:{rule_group_id}:political"
+                )
+            ],
+            [InlineKeyboardButton("« 返回", callback_data=f"admin:rule_groups:select:{rule_group_id}")]
+        ]
+        return InlineKeyboardMarkup(keyboard)
+        
+    @CallbackRegistry.register(r"^admin:settings:rules:(\w+)$")
+    async def handle_rules(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理规则设置"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
-
-        keyboard = []
-        for rule, enabled in self.moderation_rules.items():
-            status = "✅" if enabled else "❌"
-            keyboard.append([InlineKeyboardButton(
-                f"{rule.upper()} {status}",
-                callback_data=f"admin:settings:rules:toggle:{rule}"
-            )])
+            
+        rule_group_id = query.data.split(":")[-1]
         
-        keyboard.append([InlineKeyboardButton("« 返回设置", callback_data="admin:settings")])
+        # 获取当前规则状态
+        rules = {
+            "nsfw": await rule_group_config.get_config(rule_group_id, configkey.Rules.NSFW),
+            "spam": await rule_group_config.get_config(rule_group_id, configkey.Rules.SPAM),
+            "violence": await rule_group_config.get_config(rule_group_id, configkey.Rules.VIOLENCE),
+            "political": await rule_group_config.get_config(rule_group_id, configkey.Rules.POLITICAL)
+        }
+        
+        text = "⚙️ 审核规则设置\n\n"
+        text += "当前状态:\n"
+        text += f"- NSFW 检测: {'✅' if rules['nsfw'] else '❌'}\n"
+        text += f"- 垃圾信息: {'✅' if rules['spam'] else '❌'}\n"
+        text += f"- 暴力内容: {'✅' if rules['violence'] else '❌'}\n"
+        text += f"- 政治内容: {'✅' if rules['political'] else '❌'}\n"
         
         await self._safe_edit_message(
             query,
-            "🔧 规则设置\n"
-            "点击规则切换开关状态：",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            text,
+            reply_markup=self._get_rules_keyboard(rule_group_id)
         )
-
-    @CallbackRegistry.register(r"^admin:settings:rules:toggle:(\w+)$")
+        
+    @CallbackRegistry.register(r"^admin:settings:rules:toggle:(\w+):(\w+)$")
     async def handle_rule_toggle(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理规则开关切换"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
-
-        rule = query.data.split(":")[4]
-        if rule in self.moderation_rules:
-            # 更新内存中的设置
-            self.moderation_rules[rule] = not self.moderation_rules[rule]
             
-            # 保存到配置文件
-            config_key = f"bot.settings.moderation.rules.{rule}"
-            config.set_config(config_key, self.moderation_rules[rule])
-            
-            await query.answer(f"已{'启用' if self.moderation_rules[rule] else '禁用'} {rule.upper()} 规则")
-            await self.handle_rules_settings(update, context)
+        rule_group_id = query.data.split(":")[-2]
+        rule_type = query.data.split(":")[-1]
+        
+        # 获取当前状态
+        current = await rule_group_config.get_config(
+            rule_group_id,
+            getattr(configkey.Rules, rule_type.upper())
+        )
+        
+        # 切换状态
+        await rule_group_config.set_config(
+            rule_group_id,
+            getattr(configkey.Rules, rule_type.upper()),
+            not current
+        )
+        
+        await query.answer(
+            f"{'✅ 已启用' if not current else '❌ 已禁用'} {rule_type} 检测",
+            show_alert=True
+        )
+        
+        # 刷新界面
+        await self.handle_rules(update, context)
 
     @CallbackRegistry.register(r"^admin:settings:sensitivity$")
     async def handle_sensitivity_settings(self, update: Update, context: ContextTypes.DEFAULT_TYPE):

@@ -20,22 +20,22 @@ class ChatDatabase(BaseDatabase):
         """创建表"""
         sql = f"""
         CREATE TABLE IF NOT EXISTS {self.table_name} (
-            id BIGINT PRIMARY KEY AUTO_INCREMENT,
-            chat_id BIGINT NOT NULL UNIQUE,
-            chat_type ENUM('private', 'group', 'supergroup', 'channel') NOT NULL,
-            title VARCHAR(255),
-            owner_id BIGINT,
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    chat_id BIGINT NOT NULL UNIQUE,
+                    chat_type ENUM('private', 'group', 'supergroup', 'channel') NOT NULL,
+                    title VARCHAR(255),
+                    owner_id BIGINT,
             rule_group_id VARCHAR(16),
-            ads TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX idx_owner_id (owner_id),
+                    ads TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_owner_id (owner_id),
             INDEX idx_chat_type (chat_type),
             INDEX idx_rule_group (rule_group_id)
         )
         """
         self.execute(sql)
-        
+
     async def add_chat(
         self,
         chat_id: int,
