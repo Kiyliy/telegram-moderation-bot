@@ -35,7 +35,7 @@ class AdminGroupBindingHandler(AdminBaseHandler):
             await query.edit_message_text(
                 "👥 群组管理\n请选择要进行的操作：",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("群组列表", callback_data="admin:groups:list:1")
+                    InlineKeyboardButton("👥 群组列表", callback_data="admin:groups:list:1")
                 ]])
             )
         except Exception as e:

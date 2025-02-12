@@ -13,7 +13,7 @@ class AdminMenuHandler(AdminBaseHandler):
         return InlineKeyboardMarkup([
             [InlineKeyboardButton("审核设置 🛠", callback_data="admin:settings"),
              InlineKeyboardButton("查看日志 📋", callback_data="admin:logs")],
-            [InlineKeyboardButton("用户管理 👥", callback_data="admin:users"),
+            [InlineKeyboardButton("用户管理 🧑", callback_data="admin:users"),
              InlineKeyboardButton("群组管理 👥", callback_data="admin:groups")],
             [InlineKeyboardButton("统计信息 📊", callback_data="admin:stats"),
              InlineKeyboardButton("刷新设置 🔄", callback_data="admin:refresh")]
