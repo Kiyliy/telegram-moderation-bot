@@ -1,0 +1,17 @@
+version: '3.8'  # 使用3.8版本，支持资源限制配置
+services:
+  db:
+    image: mysql:8.2.0
+    restart: always
+    container_name: mysql_moderation_test
+    volumes:
+      - /root/workdir/draw_bot_mysql/mysql_data/mysql:/var/lib/mysql  # 挂载目录，持久化存储
+    ports:
+      - '16271:3306'
+    environment:
+      TZ: Asia/Shanghai   # 设置时区
+      MYSQL_ROOT_PASSWORD: 'kimiroot#sh2838' # 设置 root 用户的密码
+      MYSQL_USER: mytest   # 创建专用用户
+      MYSQL_PASSWORD: 'mytestsh2838'    # 设置专用用户密码
+      MYSQL_DATABASE: mytest   # 自动创建数据库
+    command: --max_connections=1000 --binlog_expire_logs_seconds=864000
