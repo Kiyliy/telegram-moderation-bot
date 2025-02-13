@@ -127,11 +127,11 @@ class PunishmentHandler(AdminBaseHandler):
         
         keyboard = [
             [
-                InlineKeyboardButton(f"-{step*2}", callback_data=f"admin:rg:{rule_group_id}:mo:punishment:{setting_type}:adj:-{step*2}"),
-                InlineKeyboardButton(f"-{step}", callback_data=f"admin:rg:{rule_group_id}:mo:punishment:{setting_type}:adj:-{step}"),
+                InlineKeyboardButton(f"-{step*2}", callback_data=f"admin:rg:{rule_group_id}:mo:punishment:{setting_keyword}:adj:-{step*2}"),
+                InlineKeyboardButton(f"-{step}", callback_data=f"admin:rg:{rule_group_id}:mo:punishment:{setting_keyword}:adj:-{step}"),
                 InlineKeyboardButton(f"{current_value}", callback_data="ignore"),
-                InlineKeyboardButton(f"+{step}", callback_data=f"admin:rg:{rule_group_id}:mo:punishment:{setting_type}:adj:{step}"),
-                InlineKeyboardButton(f"+{step*2}", callback_data=f"admin:rg:{rule_group_id}:mo:punishment:{setting_type}:adj:{step*2}")
+                InlineKeyboardButton(f"+{step}", callback_data=f"admin:rg:{rule_group_id}:mo:punishment:{setting_keyword}:adj:{step}"),
+                InlineKeyboardButton(f"+{step*2}", callback_data=f"admin:rg:{rule_group_id}:mo:punishment:{setting_keyword}:adj:{step*2}")
             ],
             [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_group_id}:mo:punishment")]
         ]

@@ -349,3 +349,79 @@ pymysql.err.OperationalError: (1054, "Unknown column 'rule_group_id' in 'where c
 [INFO] 2025-02-13 04:59:30,927 - member_system_logger - INFO - 用户 mytest 已存在
 [INFO] 2025-02-13 05:01:58,617 - member_system_logger - INFO - 数据库 mytest 已存在
 [INFO] 2025-02-13 05:01:58,620 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:03:35,496 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:03:35,498 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:03:49,280 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:03:49,281 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:05:46,480 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:05:46,483 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:06:23,315 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:06:23,317 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:08:43,797 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:08:43,800 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:10:42,936 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:10:42,939 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:11:05,345 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:11:05,348 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:15:02,347 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:15:02,350 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:20:06,663 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:20:06,666 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:20:55,937 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:20:55,939 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:23:05,630 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:23:05,633 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:38:01,739 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:38:01,741 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:48:27,193 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:48:27,196 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:48:45,104 - member_system_logger - ERROR - 查询出错: 
+        SELECT * FROM chats
+        WHERE rule_group_id IS NULL
+        AND WHERE user_id = %s
+        ORDER BY created_at DESC
+        , (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'WHERE user_id = 5809832805\n        ORDER BY created_at DESC' at line 3")
+Traceback (most recent call last):
+  File "/root/kimi-dev/telegram-moderation-bot/src/core/database/db/base_database.py", line 97, in fetch_all
+    await cursor.execute(sql, params)
+  File "/root/kimi-dev/telegram-moderation-bot/venv/lib/python3.10/site-packages/aiomysql/cursors.py", line 239, in execute
+    await self._query(query)
+  File "/root/kimi-dev/telegram-moderation-bot/venv/lib/python3.10/site-packages/aiomysql/cursors.py", line 457, in _query
+    await conn.query(q)
+  File "/root/kimi-dev/telegram-moderation-bot/venv/lib/python3.10/site-packages/aiomysql/connection.py", line 469, in query
+    await self._read_query_result(unbuffered=unbuffered)
+  File "/root/kimi-dev/telegram-moderation-bot/venv/lib/python3.10/site-packages/aiomysql/connection.py", line 683, in _read_query_result
+    await result.read()
+  File "/root/kimi-dev/telegram-moderation-bot/venv/lib/python3.10/site-packages/aiomysql/connection.py", line 1164, in read
+    first_packet = await self.connection._read_packet()
+  File "/root/kimi-dev/telegram-moderation-bot/venv/lib/python3.10/site-packages/aiomysql/connection.py", line 652, in _read_packet
+    packet.raise_for_error()
+  File "/root/kimi-dev/telegram-moderation-bot/venv/lib/python3.10/site-packages/pymysql/protocol.py", line 219, in raise_for_error
+    err.raise_mysql_exception(self._data)
+  File "/root/kimi-dev/telegram-moderation-bot/venv/lib/python3.10/site-packages/pymysql/err.py", line 150, in raise_mysql_exception
+    raise errorclass(errno, errval)
+pymysql.err.ProgrammingError: (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'WHERE user_id = 5809832805\n        ORDER BY created_at DESC' at line 3")
+[INFO] 2025-02-13 05:49:54,871 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:49:54,874 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:51:55,616 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:51:55,619 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:56:45,655 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:56:45,658 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:58:53,724 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:58:53,727 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:59:15,425 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:59:15,427 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 05:59:35,554 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 05:59:35,556 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 06:00:13,593 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 06:00:13,595 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 06:01:02,893 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 06:01:02,895 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 06:01:47,506 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 06:01:47,508 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 06:02:06,430 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 06:02:06,432 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 06:02:22,169 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 06:02:22,171 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 06:06:21,088 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 06:06:21,090 - member_system_logger - INFO - 用户 mytest 已存在

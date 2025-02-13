@@ -192,7 +192,7 @@ class ChatDatabase(BaseDatabase):
         
     async def get_chats_by_rule_group(
         self,
-        rule_group_id: int
+        rule_group_id: str
     ) -> List[ChatInfo]:
         """获取规则组内的所有群组"""
         sql = f"""
@@ -203,12 +203,13 @@ class ChatDatabase(BaseDatabase):
         rows = await self.fetch_all(sql, (rule_group_id,))
         return [ChatInfo.from_list(row) for row in rows]
         
-    async def get_unbound_chats(self) -> List[ChatInfo]:
-        """获取未绑定规则组的群组"""
+    async def get_unbound_chats(self, user_id) -> List[ChatInfo]:
+        """获取用户所属的群组下, 所有未绑定的群组"""
         sql = f"""
         SELECT * FROM {self.table_name}
         WHERE rule_group_id IS NULL
+        AND owner_id = %s
         ORDER BY created_at DESC
         """
-        rows = await self.fetch_all(sql)
+        rows = await self.fetch_all(sql, (user_id,))
         return [ChatInfo.from_list(row) for row in rows]

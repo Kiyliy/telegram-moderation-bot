@@ -197,7 +197,9 @@ class ChatService:
         chat_id: int,
         rule_group_id: int
     ) -> Dict[str, Any]:
-        """绑定群组到规则组"""
+        """
+        绑定群组到规则组
+        """
         return await self.db.bind_chat_to_rule_group(
             chat_id=chat_id,
             rule_group_id=rule_group_id
@@ -207,16 +209,20 @@ class ChatService:
         self,
         chat_id: int
     ) -> Dict[str, Any]:
-        """解绑群组"""
+        """
+        将群组和所属的规则组进行解绑
+        """
         return await self.db.unbind_chat_from_rule_group(chat_id)
 
     async def get_chats_by_rule_group(
         self,
-        rule_group_id: int
+        rule_group_id: str
     ) -> List[ChatInfo]:
         """获取规则组内的所有群组"""
         return await self.db.get_chats_by_rule_group(rule_group_id)
 
-    async def get_unbound_chats(self) -> List[ChatInfo]:
-        """获取未绑定规则组的群组"""
-        return await self.db.get_unbound_chats()
+    async def get_unbound_chats(self, user_id) -> List[ChatInfo]:
+        """
+        获取用户所属的群组下, 所有未绑定的群组
+        """
+        return await self.db.get_unbound_chats(user_id=user_id)

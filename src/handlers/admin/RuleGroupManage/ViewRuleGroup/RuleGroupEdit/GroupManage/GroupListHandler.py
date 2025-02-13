@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import List
 from src.core.database.models.db_chat import ChatInfo
 
-class AdminGroupListHandler(AdminBaseHandler):
+class GroupListHandler(AdminBaseHandler):
     """群组列表处理器"""
     
     def __init__(self):
@@ -22,8 +22,9 @@ class AdminGroupListHandler(AdminBaseHandler):
         current_page: int,
         has_next: bool,
         base_callback: str,
-        back_callback: str = "admin:groups",
-        bot_username: str = ""
+        back_callback: str = r"admin:rg:{rule_group_id}:groups",
+        bot_username: str = "",
+        rule_group_id: str = ""
     ) -> List[List[InlineKeyboardButton]]:
         """生成分页键盘"""
         keyboard = []
@@ -45,17 +46,18 @@ class AdminGroupListHandler(AdminBaseHandler):
             
         # 控制按钮
         keyboard.append([
-            InlineKeyboardButton("🔗 添加到群组", url=f"https://t.me/{bot_username}?startgroup=true")
+            InlineKeyboardButton("🔗 添加新的群组", url=f"https://t.me/{bot_username}?startgroup=true"),
+            InlineKeyboardButton("🔗 绑定已有的群组", callback_data=f"admin:rg:{rule_group_id}:groups:bind_existing")
         ])
         keyboard.append([
             InlineKeyboardButton("🔄 刷新", callback_data=f"{base_callback}:{current_page}"),
-            InlineKeyboardButton("🔙 返回", callback_data=back_callback)
+            InlineKeyboardButton("🔙 返回", callback_data=back_callback.format(rule_group_id=rule_group_id))
         ])
 
         
         return keyboard
 
-    @CallbackRegistry.register(r"^admin:groups:list:(\d+)$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:groups:list:(\d+)$")
     async def handle_group_list(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理群组列表查看"""
         query = update.callback_query
@@ -63,11 +65,12 @@ class AdminGroupListHandler(AdminBaseHandler):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
-        page = int(query.data.split(":")[-1])
+        page = int(query.data.split(":")[-1]) if len(query.data.split(":")) > 5 else 1
+        rule_group_id = query.data.split(":")[2]    
         
         # 获取所有群组
-        all_groups:List[ChatInfo] = await self.chat_service.get_owner_groups(
-            user_id=query.from_user.id
+        all_groups:List[ChatInfo] = await self.chat_service.get_chats_by_rule_group(
+            rule_group_id=rule_group_id
         )
         
         # 手动分页
@@ -77,9 +80,9 @@ class AdminGroupListHandler(AdminBaseHandler):
         has_next = len(all_groups) > end_idx
         
         if not current_groups:
-            text = "👥 群组列表\n\n暂无群组"
+            text = "👥 此规则组下的群组列表\n\n暂无群组"
         else:
-            text = "👥 群组列表：\n\n"
+            text = "👥 此规则组下的群组列表：\n\n"
             for group in current_groups:
                 text += (
                     f"群组: {group.title}\n"
@@ -92,8 +95,9 @@ class AdminGroupListHandler(AdminBaseHandler):
         keyboard = self._get_pagination_keyboard(
             current_page=page,
             has_next=has_next,
-            base_callback="admin:groups:list",
-            bot_username=context.bot.username
+            base_callback=f"admin:rg:{rule_group_id}:groups:list",
+            bot_username=context.bot.username,
+            rule_group_id=rule_group_id
         )
         
         # 如果有记录,添加查看详情按钮
@@ -102,7 +106,7 @@ class AdminGroupListHandler(AdminBaseHandler):
                 keyboard.insert(0, [
                     InlineKeyboardButton(
                         f"{group.title}", 
-                        callback_data=f"admin:groups:detail:{group.chat_id}"
+                        callback_data=f"admin:rg:{rule_group_id}:groups:detail:{group.chat_id}"
                     )
                 ])
         
@@ -112,63 +116,8 @@ class AdminGroupListHandler(AdminBaseHandler):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    @CallbackRegistry.register(r"^admin:groups:detail:(-?\d+)$")
-    async def handle_group_detail(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理群组详情查看"""
-        query = update.callback_query
-        if not self._is_admin(query.from_user.id):
-            await query.answer("⚠️ 没有权限", show_alert=True)
-            return
 
-        chat_id = int(query.data.split(":")[-1])
-        
-        # 获取群组信息
-        group = await self.chat_service.get_chat_info(chat_id)
-        if not group:
-            await query.answer("⚠️ 群组不存在", show_alert=True)
-            return
-            
-        # 获取群组违规统计
-        violations = await self.moderation_service.get_violation_stats(chat_id=chat_id)
-        
-        # 获取被封禁用户数量
-        banned_users = await self.moderation_service.get_banned_users(chat_id)
-        
-        text = (
-            f"👥 群组详情\n\n"
-            f"群组: {group.title}\n"
-            f"ID: {group.chat_id}\n"
-            f"类型: {group.chat_type}\n"
-            f"所有者: {group.owner_id}\n\n"
-            f"违规统计:\n"
-        )
-        
-        if violations:
-            for vtype, stats in violations.items():
-                text += (
-                    f"- {vtype}: {stats['count']} 次\n"
-                    f"  涉及 {stats['user_count']} 个用户\n"
-                )
-        else:
-            text += "暂无违规记录\n"
-            
-        text += f"\n被封禁用户: {len(banned_users)} 人"
-
-        keyboard = [
-            [
-                InlineKeyboardButton("违规统计", callback_data=f"admin:groups:violations:{chat_id}:1"),
-                InlineKeyboardButton("封禁用户", callback_data=f"admin:groups:banned:{chat_id}:1")
-            ],
-            [InlineKeyboardButton("解除绑定", callback_data=f"admin:groups:unbind:{chat_id}")],
-            [InlineKeyboardButton("« 返回列表", callback_data="admin:groups:list:1")]
-        ]
-        
-        await self._safe_edit_message(
-            query,
-            text,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
 
 
 # 初始化处理器
-AdminGroupListHandler() 
+GroupListHandler() 
