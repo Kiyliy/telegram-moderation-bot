@@ -5,7 +5,7 @@ from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.MessageFilters import MessageFilters
 from src.core.registry.CallbackRegistry import CallbackRegistry
 
-class AdminMenuHandler(AdminBaseHandler):
+class MenuHandler(AdminBaseHandler):
     def __init__(self):
         super().__init__()
 
@@ -41,4 +41,4 @@ class AdminMenuHandler(AdminBaseHandler):
                 reply_markup=self.get_admin_menu_keyboard()
             )
 
-AdminMenuHandler()
+MenuHandler()
