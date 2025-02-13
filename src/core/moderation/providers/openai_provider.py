@@ -5,10 +5,12 @@ import aiohttp
 from src.core.moderation.models import ModerationInput, ModerationResult, ContentType, ModerationCategory
 from src.core.moderation.utils.video import VideoProcessor
 from src.core.moderation.providers.base import IModerationProvider
-from src.core.tools.base64tools import base64_img_url
+from src.core.tools.base64tools import base64_img_url, bits_to_base64
+from src.core.tools.task_keeper import TaskKeeper
 import cv2
 import asyncio
 import os
+from io import BytesIO
 
 class OpenAIModerationProvider(IModerationProvider):
     """OpenAI审核服务提供者"""
@@ -57,11 +59,24 @@ class OpenAIModerationProvider(IModerationProvider):
                 "text": input_data.content
             })
         elif input_data.type == ContentType.IMAGE:
-            # 处理单个URL或URL列表
-            urls = input_data.content if isinstance(input_data.content, list) else [input_data.content]
-            for url in urls:
-                # 转换为base64
-                base64_image = await base64_img_url(url)
+            # 处理单个路径/URL或其列表
+            paths = input_data.content if isinstance(input_data.content, list) else [input_data.content]
+            for path in paths:
+                base64_image = None
+                if os.path.exists(path):  # 如果是本地文件路径
+                    try:
+                        with open(path, 'rb') as img_file:
+                            base64_image = bits_to_base64(BytesIO(img_file.read()))
+                    except Exception as e:
+                        print(f"Error reading local file {path}: {str(e)}")
+                        continue
+                else:  # 假设是URL
+                    try:
+                        base64_image = await base64_img_url(path)
+                    except Exception as e:
+                        print(f"Error fetching URL {path}: {str(e)}")
+                        continue
+
                 if base64_image:
                     api_inputs.append({
                         "type": "image_url",
@@ -87,7 +102,7 @@ class OpenAIModerationProvider(IModerationProvider):
                 if category not in categories:
                     categories[category] = ModerationCategory(
                         flagged=False,
-                        score=0.0,
+                        score=0.00000000,
                         details={"applied_input_types": []}
                     )
                 
@@ -127,14 +142,56 @@ class OpenAIModerationProvider(IModerationProvider):
                 # 处理视频
                 frame_paths = await VideoProcessor.process_video(content.content)
                 temp_files.extend(frame_paths)  # 记录临时文件
-                content = ModerationInput(
-                    type=ContentType.IMAGE,
-                    content=frame_paths
-                )
                 
-            api_inputs = await self._prepare_input(content)
-            response = await self._make_request(api_inputs)
-            return self._process_api_response(response, content)
+                # 创建所有帧的处理任务
+                async def process_single_frame(frame_path: str):
+                    frame_input = ModerationInput(
+                        type=ContentType.IMAGE,
+                        content=frame_path
+                    )
+                    api_inputs = await self._prepare_input(frame_input)
+                    if api_inputs:  # 确保有有效的输入
+                        return await self._make_request(api_inputs)
+                    return None
+                
+                # 创建并管理任务
+                tasks = [
+                    asyncio.create_task(process_single_frame(frame_path))
+                    for frame_path in frame_paths
+                ]
+                
+                # 使用 TaskKeeper 管理任务, 避免被回收
+                for task in tasks:
+                    TaskKeeper.add_task(task)
+                
+                # 等待所有任务完成
+                all_results = await asyncio.gather(*tasks, return_exceptions=True)
+                
+                # 过滤出成功的结果
+                valid_results = [
+                    result for result in all_results 
+                    if result is not None and not isinstance(result, Exception)
+                ]
+                
+                # 合并所有帧的结果
+                if valid_results:
+                    # 合并所有响应为一个
+                    merged_response = {
+                        "results": []
+                    }
+                    for result in valid_results:
+                        merged_response["results"].extend(result["results"])
+                    
+                    return self._process_api_response(merged_response, content)
+                else:
+                    raise ValueError("No valid frames could be processed")
+            else:
+                # 处理普通内容（文本或单张图片）
+                api_inputs = await self._prepare_input(content)
+                if not api_inputs:
+                    raise ValueError("No valid input could be prepared")
+                response = await self._make_request(api_inputs)
+                return self._process_api_response(response, content)
             
         except Exception as e:
             raise ValueError(f"Moderation failed: {str(e)}")

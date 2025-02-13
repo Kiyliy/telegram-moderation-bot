@@ -24,7 +24,7 @@ class TestPhotoHandler(AdminBaseHandler):
             )
         ])
 
-    @MessageRegistry.register(MessageFilters.match_media_type(['photo']))  # 直接注册图片消息处理器
+    # @MessageRegistry.register(MessageFilters.match_media_type(['photo','video']))  # 直接注册图片消息处理器
     async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理图片消息"""
         if not self._is_admin(update.effective_user.id):
@@ -34,8 +34,12 @@ class TestPhotoHandler(AdminBaseHandler):
         
         try:
             # 获取最大尺寸的图片
-            photo = update.message.photo[-1]
-            file = await context.bot.get_file(photo.file_id)
+            if update.message.photo:
+                photo = update.message.photo[-1]
+                file = await context.bot.get_file(photo.file_id)
+            elif update.message.video:
+                video = update.message.video
+                file = await context.bot.get_file(video.file_id)
             
             # 创建审核输入
             input_data = ModerationInput(
@@ -44,7 +48,12 @@ class TestPhotoHandler(AdminBaseHandler):
             )
             
             # 执行审核
-            result = await self.moderation_manager.check_content(input_data)
+            result = await self.moderation_manager.check_content(
+                content= ModerationInput(
+                    type=ContentType.VIDEO,
+                    content=input_data
+                    )
+            )
             
             # 格式化结果
             text = "📋 审核结果:\n\n"
@@ -62,7 +71,7 @@ class TestPhotoHandler(AdminBaseHandler):
             print(f"❌ 审核失败: {str(e)}, {traceback.format_exc()}")
             await update.message.reply_text(f"❌ 审核失败: {str(e)}")
 
-    @MessageRegistry.register(MessageFilters.match_media_type('photo'))  # 直接注册图片消息处理器
+    @MessageRegistry.register(MessageFilters.match_media_type(['video']))  # 直接注册图片消息处理器
     async def handle_video(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理视频消息"""
         if not self._is_admin(update.effective_user.id):
@@ -96,6 +105,7 @@ class TestPhotoHandler(AdminBaseHandler):
             await update.message.reply_text(text)
             
         except Exception as e:
+            print(f"❌ 审核失败: {str(e)}, {traceback.format_exc()}")
             await update.message.reply_text(f"❌ 审核失败: {str(e)}")
 
 # 初始化处理器
