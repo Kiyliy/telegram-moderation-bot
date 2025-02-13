@@ -64,8 +64,15 @@ class AdminLogHandler(AdminBaseHandler):
 
         rule_group_id = query.data.split(":")[2]
 
+        # 获取规则组下的所有群组
+        chats = await self.chat_service.get_chats_by_rule_group(rule_group_id)
+        chat_ids = [chat.chat_id for chat in chats]
+
         # 获取待审核申诉数量
-        pending_appeals = await self.moderation_log_service.get_pending_appeals(limit=1)
+        pending_appeals = await self.moderation_log_service.get_pending_appeals(
+            limit=1,
+            chat_ids=chat_ids
+        )
         pending_count = len(pending_appeals)
 
         keyboard = [
@@ -98,10 +105,15 @@ class AdminLogHandler(AdminBaseHandler):
         page = int(query.data.split(":")[-1])
         offset = (page - 1) * self.page_size
         
+        # 获取规则组下的所有群组
+        chats = await self.chat_service.get_chats_by_rule_group(rule_group_id)
+        chat_ids = [chat.chat_id for chat in chats]
+        
         # 获取待审核申诉
         logs = await self.moderation_log_service.get_pending_appeals(
             limit=self.page_size + 1,  # 多获取一条用于判断是否有下一页
-            offset=offset
+            offset=offset,
+            chat_ids=chat_ids
         )
         
         has_next = len(logs) > self.page_size
@@ -180,13 +192,12 @@ class AdminLogHandler(AdminBaseHandler):
             await query.answer("❌ 操作失败", show_alert=True)
             
         # 刷新页面
-        # 从当前callback_data中提取页码
-        current_page = 1  # 默认第1页
-        for row in query.message.reply_markup.inline_keyboard:
-            for button in row:
-                if button.callback_data.startswith(f"admin:rg:{rule_group_id}:logs:pending:"):
-                    current_page = int(button.callback_data.split(":")[-1])
-                    break
+        # 从原始的callback_data中提取页码
+        # 格式: admin:rg:{rule_group_id}:logs:pending:{page}
+        try:
+            current_page = int(query.data.split(":")[-2])  # 倒数第二个是页码
+        except (IndexError, ValueError):
+            current_page = 1  # 如果解析失败，默认第1页
         
         # 重新调用handle_pending_logs
         context.user_data["callback_query"] = query
@@ -203,8 +214,12 @@ class AdminLogHandler(AdminBaseHandler):
 
         rule_group_id = query.data.split(":")[2]
         
+        # 获取规则组下的所有群组
+        chats = await self.chat_service.get_chats_by_rule_group(rule_group_id)
+        chat_ids = [chat.chat_id for chat in chats]
+        
         # 获取违规统计
-        violations = await self.user_moderation_service.get_violation_stats()
+        violations = await self.user_moderation_service.get_violation_stats(chat_ids=chat_ids)
         
         if not violations:
             text = "📋 违规统计\n\n暂无违规记录"
@@ -238,8 +253,12 @@ class AdminLogHandler(AdminBaseHandler):
 
         rule_group_id = query.data.split(":")[2]
         
+        # 获取规则组下的所有群组
+        chats = await self.chat_service.get_chats_by_rule_group(rule_group_id)
+        chat_ids = [chat.chat_id for chat in chats]
+        
         # 获取审核统计
-        stats = await self.moderation_log_service.get_review_stats()
+        stats = await self.moderation_log_service.get_review_stats(chat_ids=chat_ids)
         
         if not stats:
             text = "📋 审核统计\n\n暂无审核记录"
@@ -274,9 +293,13 @@ class AdminLogHandler(AdminBaseHandler):
             return
             
         rule_group_id = query.data.split(":")[2]
+        
+        # 获取规则组下的所有群组
+        chats = await self.chat_service.get_chats_by_rule_group(rule_group_id)
+        chat_ids = [chat.chat_id for chat in chats]
             
         # 获取各种统计信息
-        review_stats = await self.moderation_log_service.get_review_stats()
+        review_stats = await self.moderation_log_service.get_review_stats(chat_ids=chat_ids)
         
         text = "📊 审核统计\n\n"
         

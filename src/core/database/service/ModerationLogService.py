@@ -50,7 +50,9 @@ class ModerationLogService:
         review_status: str,
         reviewer_id: int
     ) -> bool:
-        """更新审核状态"""
+        """
+        更新审核状态
+        """
         return await self.log_db.update_review(
             log_id=log_id,
             review_status=review_status,
@@ -61,10 +63,13 @@ class ModerationLogService:
     async def get_pending_logs(
         self,
         limit: int = 10,
-        offset: int = 0
+        offset: int = 0,
+        chat_ids: List[int] = None
     ) -> List[ModerationLog]:
-        """获取待审核的日志"""
-        return await self.log_db.get_pending_logs(limit, offset)
+        """
+        获取指定群组的待审核的日志
+        """
+        return await self.log_db.get_pending_logs(limit, offset, chat_ids)
         
     async def get_user_logs(
         self,
@@ -72,7 +77,9 @@ class ModerationLogService:
         chat_id: Optional[int] = None,
         limit: int = 10
     ) -> List[ModerationLog]:
-        """获取用户的审核日志"""
+        """
+        获取用户的审核日志
+        """
         return await self.log_db.get_logs_by_user(user_id, chat_id, limit)
         
     async def get_chat_logs(
@@ -80,27 +87,36 @@ class ModerationLogService:
         chat_id: int,
         limit: int = 10
     ) -> List[ModerationLog]:
-        """获取群组的审核日志"""
+        """
+        获取指定群组的审核日志
+        """
         return await self.log_db.get_logs_by_chat(chat_id, limit)
         
     async def get_logs_by_type(
         self,
         violation_type: str,
-        limit: int = 10
+        limit: int = 10,
+        chat_ids: List[int] = None
     ) -> List[ModerationLog]:
-        """获取特定类型的审核日志"""
-        return await self.log_db.get_logs_by_type(violation_type, limit)
+        """
+        获取特定类型的审核日志
+        """
+        return await self.log_db.get_logs_by_type(violation_type, limit, chat_ids)
         
-    async def get_review_stats(self) -> Dict[str, Any]:
-        """获取审核统计"""
-        return await self.log_db.get_review_stats()
+    async def get_review_stats(self, chat_ids: List[int] = None) -> Dict[str, Any]:
+        """
+        获取特定群组的审核统计
+        """
+        return await self.log_db.get_review_stats(chat_ids)
         
     async def add_appeal(
         self,
         log_id: int,
         appeal_reason: str
     ) -> bool:
-        """添加申诉"""
+        """
+        添加申诉
+        """
         return await self.log_db.update_appeal(
             log_id=log_id,
             appeal_reason=appeal_reason,
@@ -110,7 +126,10 @@ class ModerationLogService:
     async def get_pending_appeals(
         self,
         limit: int = 10,
-        offset: int = 0
+        offset: int = 0,
+        chat_ids: List[int] = None
     ) -> List[ModerationLog]:
-        """获取待处理的申诉"""
-        return await self.log_db.get_pending_appeals(limit, offset) 
+        """
+        获取指定群组的待处理的申诉
+        """
+        return await self.log_db.get_pending_appeals(limit, offset, chat_ids) 

@@ -128,31 +128,43 @@ class ModerationLogDatabase(BaseDatabase):
     async def get_pending_logs(
         self,
         limit: int = 10,
-        offset: int = 0
+        offset: int = 0,
+        chat_ids: List[int] = None
     ) -> List[ModerationLog]:
-        """获取待审核的日志"""
+        """
+        获取指定的群组的待审核的日志
+        :param limit: 每页显示的条数
+        :param offset: 偏移量
+        :param chat_ids: 群组ID列表
+        :return: 待审核的日志列表
+        """
         sql = f"""
         SELECT * FROM {self.table_name}
         WHERE review_status = 'pending'
+        {" AND chat_id IN %s" if chat_ids else ""}
         ORDER BY created_at DESC
         LIMIT %s OFFSET %s
         """
-        rows = await self.fetch_all(sql, (limit, offset))
+        params = (tuple(chat_ids), limit, offset) if chat_ids else (limit, offset)
+        rows = await self.fetch_all(sql, params)
         return [ModerationLog.from_list(row) for row in rows]
         
     async def get_pending_appeals(
         self,
         limit: int = 10,
-        offset: int = 0
+        offset: int = 0,
+        chat_ids: List[int] = None
     ) -> List[ModerationLog]:
         """获取待处理的申诉"""
         sql = f"""
         SELECT * FROM {self.table_name}
         WHERE has_appeal = TRUE AND review_status = 'pending'
+        {" AND chat_id IN %s" if chat_ids else ""}
         ORDER BY appeal_time DESC
         LIMIT %s OFFSET %s
         """
-        rows = await self.fetch_all(sql, (limit, offset))
+        params = (tuple(chat_ids), limit, offset) if chat_ids else (limit, offset)
+        rows = await self.fetch_all(sql, params)
         return [ModerationLog.from_list(row) for row in rows]
         
     async def get_logs_by_user(
@@ -198,19 +210,28 @@ class ModerationLogDatabase(BaseDatabase):
     async def get_logs_by_type(
         self,
         violation_type: str,
-        limit: int = 10
+        limit: int = 10,
+        chat_ids: List[int] = None
     ) -> List[ModerationLog]:
-        """获取特定类型的审核日志"""
+        """
+        获取指定的群组的特定类型的审核日志
+        :param violation_type: 违规类型
+        :param limit: 每页显示的条数
+        :param chat_ids: 群组ID列表
+        :return: 特定类型的审核日志列表
+        """
         sql = f"""
         SELECT * FROM {self.table_name}
         WHERE violation_type = %s
+        {" AND chat_id IN %s" if chat_ids else ""}
         ORDER BY created_at DESC
         LIMIT %s
         """
-        rows = await self.fetch_all(sql, (violation_type, limit))
+        params = (violation_type, tuple(chat_ids), limit) if chat_ids else (violation_type, limit)
+        rows = await self.fetch_all(sql, params)
         return [ModerationLog.from_list(row) for row in rows]
         
-    async def get_review_stats(self) -> Dict[str, Any]:
+    async def get_review_stats(self, chat_ids: List[int] = None) -> Dict[str, Any]:
         """获取审核统计"""
         sql = f"""
         SELECT 
@@ -220,9 +241,11 @@ class ModerationLogDatabase(BaseDatabase):
             COUNT(DISTINCT chat_id) as chat_count,
             AVG(CASE WHEN confidence IS NOT NULL THEN confidence ELSE 0 END) as avg_confidence
         FROM {self.table_name}
+        {" WHERE chat_id IN %s" if chat_ids else ""}
         GROUP BY review_status
         """
-        rows = await self.fetch_all_dict(sql)
+        params = (tuple(chat_ids),) if chat_ids else None
+        rows = await self.fetch_all_dict(sql, params)
         return {
             row['review_status']: {
                 'count': row['count'],

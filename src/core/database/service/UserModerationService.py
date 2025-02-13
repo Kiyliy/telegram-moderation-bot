@@ -125,18 +125,22 @@ class UserModerationService:
         
     async def get_violation_stats(
         self,
-        chat_id: Optional[int] = None,
-        user_id: Optional[int] = None
+        chat_ids: List[int] = None
     ) -> Dict:
         """获取违规统计"""
-        if chat_id:
-            return await self.violation_service.get_chat_violation_stats(
-                chat_id=chat_id
-            )
-        if user_id:
-            return await self.violation_service.get_user_violation_stats(
-                user_id=user_id
-            )
+        if chat_ids:
+            stats = {}
+            for chat_id in chat_ids:
+                chat_stats = await self.violation_service.get_chat_violation_stats(chat_id)
+                for vtype, stat in chat_stats.items():
+                    if vtype not in stats:
+                        stats[vtype] = {
+                            'count': 0,
+                            'user_count': 0
+                        }
+                    stats[vtype]['count'] += stat['count']
+                    stats[vtype]['user_count'] += stat['user_count']
+            return stats
         return {}
         
     async def remove_warning(
