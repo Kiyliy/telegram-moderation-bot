@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import List, Union
-from ..models import ModerationInput, ModerationResult
+from ..models import ModerationInputContent, ModerationResult
 
 class IModerationProvider(ABC):
     """审核服务提供者接口"""
     
     @abstractmethod
-    async def check_content(self, content: Union[ModerationInput, List[ModerationInput]]) -> ModerationResult:
+    async def check_content(self, content: ModerationInputContent) -> ModerationResult:
         """审核内容"""
         pass
 

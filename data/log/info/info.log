@@ -485,3 +485,15 @@ pymysql.err.ProgrammingError: (1064, "You have an error in your SQL syntax; chec
 [INFO] 2025-02-13 09:30:29,168 - member_system_logger - INFO - 用户 mytest 已存在
 [INFO] 2025-02-13 10:11:48,608 - member_system_logger - INFO - 数据库 mytest 已存在
 [INFO] 2025-02-13 10:11:48,610 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 10:12:35,455 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 10:12:35,457 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 10:12:55,180 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 10:12:55,182 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 10:13:21,970 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 10:13:21,972 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 10:13:46,688 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 10:13:46,691 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 10:15:10,787 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 10:15:10,789 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 10:16:04,563 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 10:16:04,566 - member_system_logger - INFO - 用户 mytest 已存在

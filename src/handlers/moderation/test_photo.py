@@ -5,7 +5,7 @@ from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.MessageFilters import MessageFilters
 from src.handlers.admin.base import AdminBaseHandler
-from src.core.moderation.models import ModerationInput, ContentType
+from src.core.moderation.models import ModerationInputContent, ContentType
 from src.core.moderation.manager import ModerationManager
 from src.core.moderation.providers.openai_provider import OpenAIModerationProvider
 from src.core.moderation.config import ModerationConfig
@@ -42,18 +42,13 @@ class TestPhotoHandler(AdminBaseHandler):
                 file = await context.bot.get_file(video.file_id)
             
             # 创建审核输入
-            input_data = ModerationInput(
-                type=ContentType.IMAGE,
-                content=file.file_path
+            input_data = ModerationInputContent(
+                type=ContentType.IMAGE_URL,
+                image_urls=[file.file_path]
             )
             
             # 执行审核
-            result = await self.moderation_manager.check_content(
-                content= ModerationInput(
-                    type=ContentType.VIDEO,
-                    content=input_data
-                    )
-            )
+            result = await self.moderation_manager.check_content(input_data)
             
             # 格式化结果
             text = "📋 审核结果:\n\n"
@@ -84,9 +79,9 @@ class TestPhotoHandler(AdminBaseHandler):
             file = await context.bot.get_file(video.file_id)
             
             # 创建审核输入
-            input_data = ModerationInput(
+            input_data = ModerationInputContent(
                 type=ContentType.VIDEO,
-                content=file.file_path
+                video=file.file_path
             )
             
             # 执行审核

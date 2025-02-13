@@ -2,7 +2,7 @@
 
 from typing import List, Union, Dict
 import aiohttp
-from src.core.moderation.models import ModerationInputContent, ModerationResult, ContentType, ModerationCategory, ImageUrl
+from src.core.moderation.models import ModerationInputContent, ModerationResult, ContentType, ModerationCategory
 from src.core.moderation.utils.video import VideoProcessor
 from src.core.moderation.providers.base import IModerationProvider
 from src.core.tools.base64tools import base64_img_url, bits_to_base64
@@ -93,6 +93,8 @@ class OpenAIModerationProvider(IModerationProvider):
         # 合并所有结果
         flagged = False
         categories = {}
+        category_scores = {}
+        category_applied_input_types = {}
         
         for result in response["results"]:
             # 更新整体违规标记
@@ -104,29 +106,37 @@ class OpenAIModerationProvider(IModerationProvider):
                     categories[category] = ModerationCategory(
                         flagged=False,
                         score=0.00000000,
-                        details={"applied_input_types": []}
+                        applied_input_types=[],
+                        details={}
                     )
+                    category_scores[category] = 0.00000000
+                    category_applied_input_types[category] = []
                 
                 # 更新分数（取最高分）
                 if score > categories[category].score:
                     categories[category].score = score
+                    category_scores[category] = score
                     categories[category].flagged = result["categories"][category]
                 
                 # 更新应用的输入类型
                 if category in result.get("category_applied_input_types", {}):
                     applied_types = result["category_applied_input_types"][category]
-                    categories[category].details["applied_input_types"].extend(
+                    categories[category].applied_input_types.extend(
                         t for t in applied_types 
-                        if t not in categories[category].details["applied_input_types"]
+                        if t not in categories[category].applied_input_types
+                    )
+                    category_applied_input_types[category].extend(
+                        t for t in applied_types 
+                        if t not in category_applied_input_types[category]
                     )
 
         return ModerationResult(
             flagged=flagged,
-            categories=categories,
             provider=self.provider_name,
             raw_response=response,
-            input_type=input_data.type,
-            input_content=input_data.content
+            categories=categories,
+            category_scores=category_scores,
+            category_applied_input_types=category_applied_input_types
         )
 
     async def check_content(
@@ -141,7 +151,7 @@ class OpenAIModerationProvider(IModerationProvider):
                 
             if content.type == ContentType.VIDEO:
                 # 处理视频
-                frame_paths = await VideoProcessor.process_video(content.content)
+                frame_paths = await VideoProcessor.process_video(content.video)
                 temp_files.extend(frame_paths)  # 记录临时文件
                 
                 # 创建所有帧的处理任务

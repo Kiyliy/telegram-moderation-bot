@@ -14,6 +14,7 @@ class ModerationInputContent(BaseModel):
     type: ContentType
     text: Optional[str] = None
     image_urls: Optional[List[str]] = None
+    video: Optional[str] = None
     extra: Dict[str, Any] = Field(default_factory=dict)  # 额外参数
 
 class ModerationCategory(BaseModel):
@@ -27,6 +28,7 @@ class ModerationResult(BaseModel):
     """单条审核结果"""
     flagged: bool
     provider: str
+    raw_response: Optional[Dict[str, Any]] = None
     categories: Dict[str, ModerationCategory]
     category_scores: Dict[str, float]  # OpenAI 的分数字段
     category_applied_input_types: Dict[str, List[str]]  # OpenAI 的输入类型应用字段
