@@ -4,19 +4,38 @@ class UserModerationConfigKeys:
     """用户管理配置键"""
     class moderation:
         """审核规则配置"""
-        class rules:
-            """规则开关"""
-            NSFW: str = 'moderation.rules.nsfw'
-            VIOLENCE: str = 'moderation.rules.violence'
-            POLITICAL: str = 'moderation.rules.political'
-            SPAM: str = 'moderation.rules.spam'
-        
-        class sensitivity:
-            """规则灵敏度"""
-            NSFW: str = 'moderation.sensitivity.nsfw'
-            VIOLENCE: str = 'moderation.sensitivity.violence'
-            POLITICAL: str = 'moderation.sensitivity.political'
-            SPAM: str = 'moderation.sensitivity.spam'
+        PROVIDER_LIST: str = 'moderation.provider_list'
+        ACTIVE_PROVIDER: str = 'moderation.active_provider'
+    
+        class providers:
+            """审核提供者"""
+            class openai:
+                class categories:
+                    SEXUAL_MINORS = "moderation.providers.openai.categories.sexual/minors"
+                    HARASSMENT = "moderation.providers.openai.categories.harassment"
+                    HARASSMENT_THREATENING = "moderation.providers.openai.categories.harassment/threatening"
+                    HATE = "moderation.providers.openai.categories.hate"
+                    HATE_THREATENING = "moderation.providers.openai.categories.hate/threatening"
+                    ILLICIT = "moderation.providers.openai.categories.illicit"
+                    ILLICIT_VIOLENT = "moderation.providers.openai.categories.illicit/violent"
+                    SELF_HARM = "moderation.providers.openai.categories.self-harm"
+                    SELF_HARM_INTENT = "moderation.providers.openai.categories.self-harm/intent"
+                    SELF_HARM_INSTRUCTIONS = "moderation.providers.openai.categories.self-harm/instructions"
+                    VIOLENCE = "moderation.providers.openai.categories.violence"
+                    VIOLENCE_GRAPHIC = "moderation.providers.openai.categories.violence/graphic"
+                class sensitivity:
+                    SEXUAL_MINORS = "moderation.providers.openai.sensitivity.sexual/minors"
+                    HARASSMENT = "moderation.providers.openai.sensitivity.harassment"
+                    HARASSMENT_THREATENING = "moderation.providers.openai.sensitivity.harassment/threatening"
+                    HATE = "moderation.providers.openai.sensitivity.hate"
+                    HATE_THREATENING = "moderation.providers.openai.sensitivity.hate/threatening"
+                    ILLICIT = "moderation.providers.openai.sensitivity.illicit"
+                    ILLICIT_VIOLENT = "moderation.providers.openai.sensitivity.illicit/violent"
+                    SELF_HARM = "moderation.providers.openai.sensitivity.self-harm"
+                    SELF_HARM_INTENT = "moderation.providers.openai.sensitivity.self-harm/intent"
+                    SELF_HARM_INSTRUCTIONS = "moderation.providers.openai.sensitivity.self-harm/instructions"
+                    VIOLENCE = "moderation.providers.openai.sensitivity.violence"
+                    VIOLENCE_GRAPHIC = "moderation.providers.openai.sensitivity.violence/graphic"
         
         class auto_actions:
             """自动处理动作"""
