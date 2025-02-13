@@ -12,7 +12,7 @@ class AdminMenuHandler(AdminBaseHandler):
     def get_admin_menu_keyboard(self) -> InlineKeyboardMarkup:
         """获取管理员主菜单键盘"""
         keyboard = [
-            [InlineKeyboardButton("📋 规则组管理", callback_data="admin:rg")],
+            [InlineKeyboardButton("📋 规则组管理", callback_data="admin:rg:list")],
             [InlineKeyboardButton("👥 群组管理", callback_data="admin:group")],
             [InlineKeyboardButton("⚖️ 审核管理", callback_data="admin:mo")],
             [InlineKeyboardButton("📊 统计信息", callback_data="admin:stats")],

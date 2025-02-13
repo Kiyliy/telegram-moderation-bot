@@ -2,7 +2,7 @@
 
 from typing import List, Union, Dict, Optional
 import aiohttp
-from core.moderation.types.ModerationTypes import ModerationInputContent, ModerationResult, ContentType, ModerationCategory
+from src.core.moderation.types.ModerationTypes import ModerationInputContent, ModerationResult, ContentType, ModerationCategory
 from src.core.moderation.utils.video import VideoProcessor
 from src.core.moderation.providers.base import IModerationProvider
 from src.core.tools.base64tools import base64_img_url, bits_to_base64
