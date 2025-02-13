@@ -5,7 +5,7 @@ from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.MessageFilters import MessageFilters
 from src.handlers.admin.base import AdminBaseHandler
-from src.core.moderation.models import ModerationInputContent, ContentType
+from core.moderation.types.ModerationTypes import ModerationInputContent, ContentType
 from src.core.moderation.manager import ModerationManager
 from src.core.moderation.providers.openai_provider import OpenAIModerationProvider
 from src.core.moderation.config import ModerationConfig

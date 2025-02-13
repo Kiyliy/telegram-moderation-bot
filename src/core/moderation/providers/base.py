@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Union
-from ..models import ModerationInputContent, ModerationResult
+from src.core.moderation.types.ModerationTypes import ModerationInputContent, ModerationResult
 
 class IModerationProvider(ABC):
     """审核服务提供者接口"""

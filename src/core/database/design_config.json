@@ -1,0 +1,45 @@
+{
+    "moderation": {
+      "provider_list": ["openai", "other_provider"],
+      "active_provider": "openai",
+      "provider_configs": {
+        "openai": {
+          "categories": {
+            "sexual/minors": false,
+            "harassment": false,
+            "harassment/threatening": false,
+            "hate": false,
+            "hate/threatening": false,
+            "illicit": false,
+            "illicit/violent": false,
+            "self-harm": false,
+            "self-harm/intent": false,
+            "self-harm/instructions": false,
+            "violence": true,
+            "violence/graphic": false
+          },
+          "sensitivity": {
+            "sexual/minors": false,
+            "harassment": false,
+            "harassment/threatening": false,
+            "hate": false,
+            "hate/threatening": false,
+            "illicit": false,
+            "illicit/violent": false,
+            "self-harm": false,
+            "self-harm/intent": false,
+            "self-harm/instructions": false,
+            "violence": true,
+            "violence/graphic": false
+          }
+        },
+        "other_provider": {
+          "categories": {
+          },
+          "sensitivity": {
+            
+          }
+        }
+      }
+    }
+  }

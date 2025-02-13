@@ -8,7 +8,6 @@ class ContentType(str, Enum):
     IMAGE_URL = "image_url"
     VIDEO = "video"  # 预留扩展
 
-
 class ModerationInputContent(BaseModel):
     """审核输入内容"""
     type: ContentType

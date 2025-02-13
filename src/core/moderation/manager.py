@@ -1,8 +1,8 @@
 # src/core/moderation/manager.py
 
 from typing import List, Union, Optional
-from .models import ModerationInputContent, ModerationResult
-from .providers.base import IModerationProvider
+from src.core.moderation.types.ModerationTypes import ModerationInputContent, ModerationResult
+from src.core.moderation.providers.base import IModerationProvider
 
 class ModerationManager:
     """审核管理器"""
