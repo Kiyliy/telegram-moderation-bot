@@ -16,10 +16,10 @@ class SelectActionHandler(AdminBaseHandler):
         return InlineKeyboardMarkup([
             [InlineKeyboardButton("创建规则组 ➕", callback_data="admin:rg:create")],
             [InlineKeyboardButton("查看规则组 📋", callback_data="admin:rg:list")],
-            [InlineKeyboardButton("« 返回", callback_data="admin:back")]
+            [InlineKeyboardButton("« 返回", callback_data="admin")]
         ])
         
-    @CallbackRegistry.register(r"^admin:rule_group$")
+    @CallbackRegistry.register(r"^admin:rg$")
     async def handle_rule_group_menu(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理规则组管理菜单"""
         query = update.callback_query
