@@ -1,6 +1,6 @@
 # src/core/moderation/providers/openai_provider.py
 
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Optional
 import aiohttp
 from core.moderation.types.ModerationTypes import ModerationInputContent, ModerationResult, ContentType, ModerationCategory
 from src.core.moderation.utils.video import VideoProcessor
@@ -11,6 +11,7 @@ import cv2
 import asyncio
 import os
 from io import BytesIO
+from src.core.moderation.providers.openai_moderation.OpenaiCategoryTypes import OpenAISettings
 
 class OpenAIModerationProvider(IModerationProvider):
     """OpenAI审核服务提供者"""
@@ -136,9 +137,44 @@ class OpenAIModerationProvider(IModerationProvider):
             category_applied_input_types=all_applied_types
         )
 
+    def _process_api_response_with_settings(
+        self, 
+        response: Dict, 
+        input_data: ModerationInputContent,
+        settings: OpenAISettings
+    ) -> ModerationResult:
+        """处理API响应
+        
+        Args:
+            response: OpenAI API的原始响应
+            input_data: 输入的内容
+            settings: OpenAI的审核设置
+        """
+        # 只处理启用的类别
+        categories = {}
+        category_scores = {}
+        
+        for category, score in response["results"][0]["category_scores"].items():
+            # 只处理启用的类别
+            if settings["categories"].get(category, False):
+                threshold = settings["sensitivity"].get(category, 0.5)
+                flagged = score > threshold
+                
+                categories[category] = flagged
+                category_scores[category] = score
+        
+        return ModerationResult(
+            flagged=any(categories.values()),
+            provider=self.provider_name,
+            raw_response=response,
+            categories=categories,
+            category_scores=category_scores
+        )
+
     async def check_content(
         self, 
-        content: ModerationInputContent
+        content: ModerationInputContent,
+        settings: Optional[OpenAISettings] = None 
     ) -> ModerationResult:
         """审核内容"""
         temp_files = []  # 跟踪临时文件
@@ -199,7 +235,12 @@ class OpenAIModerationProvider(IModerationProvider):
                 if not api_inputs:
                     raise ValueError("No valid input could be prepared")
                 response = await self._make_request(api_inputs)
-                return self._process_api_response(response, content)
+                
+                # 根据是否有配置文件, 进行返回
+                if settings:
+                    return self._process_api_response_with_settings(response, content, settings)
+                else:
+                    return self._process_api_response(response, content)
             
         except Exception as e:
             raise ValueError(f"Moderation failed: {str(e)}")
