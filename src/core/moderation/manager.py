@@ -1,7 +1,7 @@
 # src/core/moderation/manager.py
 
 from typing import List, Union, Optional
-from .models import ModerationInput, ModerationResult
+from .models import ModerationInputContent, ModerationResult
 from .providers.base import IModerationProvider
 
 class ModerationManager:
@@ -12,7 +12,7 @@ class ModerationManager:
 
     async def check_content(
         self,
-        content: Union[ModerationInput, List[ModerationInput]],
+        content: ModerationInputContent,
         provider_name: Optional[str] = None
     ) -> ModerationResult:
         """审核内容"""

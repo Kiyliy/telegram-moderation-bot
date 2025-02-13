@@ -483,3 +483,5 @@ pymysql.err.ProgrammingError: (1064, "You have an error in your SQL syntax; chec
 [INFO] 2025-02-13 09:23:00,934 - member_system_logger - INFO - 用户 mytest 已存在
 [INFO] 2025-02-13 09:30:29,165 - member_system_logger - INFO - 数据库 mytest 已存在
 [INFO] 2025-02-13 09:30:29,168 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 10:11:48,608 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 10:11:48,610 - member_system_logger - INFO - 用户 mytest 已存在

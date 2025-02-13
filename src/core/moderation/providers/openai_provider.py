@@ -2,7 +2,7 @@
 
 from typing import List, Union, Dict
 import aiohttp
-from src.core.moderation.models import ModerationInput, ModerationResult, ContentType, ModerationCategory
+from src.core.moderation.models import ModerationInputContent, ModerationResult, ContentType, ModerationCategory, ImageUrl
 from src.core.moderation.utils.video import VideoProcessor
 from src.core.moderation.providers.base import IModerationProvider
 from src.core.tools.base64tools import base64_img_url, bits_to_base64
@@ -49,45 +49,46 @@ class OpenAIModerationProvider(IModerationProvider):
                     raise ValueError(f"Moderation failed after {max_retries} attempts: {str(last_error)}")
                 await asyncio.sleep(1 * (attempt + 1))  # 指数退避
 
-    async def _prepare_input(self, input_data: ModerationInput) -> List[Dict]:
+    async def _prepare_input(self, input_data: ModerationInputContent) -> List[Dict]:
         """准备API输入数据"""
         api_inputs = []
         
-        if input_data.type == ContentType.TEXT:
+        # 处理文本输入
+        if input_data.text is not None:
             api_inputs.append({
                 "type": "text",
-                "text": input_data.content
+                "text": input_data.text
             })
-        elif input_data.type == ContentType.IMAGE:
-            # 处理单个路径/URL或其列表
-            paths = input_data.content if isinstance(input_data.content, list) else [input_data.content]
-            for path in paths:
+            
+        # 处理图片输入
+        if input_data.image_urls is not None:
+            for image_url in input_data.image_urls:
+                url = str(image_url)  # 转换 HttpUrl 为字符串
                 base64_image = None
-                if os.path.exists(path):  # 如果是本地文件路径
-                    try:
-                        with open(path, 'rb') as img_file:
-                            base64_image = bits_to_base64(BytesIO(img_file.read()))
-                    except Exception as e:
-                        print(f"Error reading local file {path}: {str(e)}")
-                        continue
-                else:  # 假设是URL
-                    try:
-                        base64_image = await base64_img_url(path)
-                    except Exception as e:
-                        print(f"Error fetching URL {path}: {str(e)}")
-                        continue
+                
+            if os.path.exists(url):  # 如果是本地文件路径
+                try:
+                    with open(url, 'rb') as img_file:
+                        base64_image = bits_to_base64(BytesIO(img_file.read()))
+                except Exception as e:
+                    print(f"Error reading local file {url}: {str(e)}")
+            else:  # 假设是URL
+                try:
+                    base64_image = await base64_img_url(url)
+                except Exception as e:
+                    print(f"Error fetching URL {url}: {str(e)}")
 
-                if base64_image:
-                    api_inputs.append({
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{base64_image}"
-                        }
-                    })
+            if base64_image:
+                api_inputs.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                })
             
         return api_inputs
 
-    def _process_api_response(self, response: Dict, input_data: ModerationInput) -> ModerationResult:
+    def _process_api_response(self, response: Dict, input_data: ModerationInputContent) -> ModerationResult:
         """处理API响应"""
         # 合并所有结果
         flagged = False
@@ -130,7 +131,7 @@ class OpenAIModerationProvider(IModerationProvider):
 
     async def check_content(
         self, 
-        content: Union[ModerationInput, List[ModerationInput]]
+        content: ModerationInputContent
     ) -> ModerationResult:
         """审核内容"""
         temp_files = []  # 跟踪临时文件
@@ -145,9 +146,9 @@ class OpenAIModerationProvider(IModerationProvider):
                 
                 # 创建所有帧的处理任务
                 async def process_single_frame(frame_path: str):
-                    frame_input = ModerationInput(
-                        type=ContentType.IMAGE,
-                        content=frame_path
+                    frame_input = ModerationInputContent(
+                        type=ContentType.IMAGE_URL,
+                        image_urls=[frame_path]
                     )
                     api_inputs = await self._prepare_input(frame_input)
                     if api_inputs:  # 确保有有效的输入
