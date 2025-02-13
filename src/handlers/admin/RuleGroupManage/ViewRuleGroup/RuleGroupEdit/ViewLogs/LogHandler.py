@@ -4,6 +4,7 @@ from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.handlers.admin.base import AdminBaseHandler
 from src.core.database.service.ModerationLogService import ModerationLogService
 from src.core.database.service.UserModerationService import UserModerationService
+from src.core.database.service.chatsService import ChatService
 from datetime import datetime
 import time
 from typing import List
@@ -17,13 +18,15 @@ class AdminLogHandler(AdminBaseHandler):
         self.page_size = 10  # 每页显示条数
         self.moderation_log_service = ModerationLogService()
         self.user_moderation_service = UserModerationService()
+        self.chat_service = ChatService()
 
     def _get_pagination_keyboard(
         self, 
         current_page: int,
         has_next: bool,
         base_callback: str,
-        back_callback: str = "admin:logs"
+        rule_group_id: str,
+        back_callback: str = None
     ) -> List[List[InlineKeyboardButton]]:
         """生成分页键盘"""
         keyboard = []
@@ -46,18 +49,20 @@ class AdminLogHandler(AdminBaseHandler):
         # 控制按钮
         keyboard.append([
             InlineKeyboardButton("刷新", callback_data=f"{base_callback}:{current_page}"),
-            InlineKeyboardButton("« 返回", callback_data=back_callback)
+            InlineKeyboardButton("« 返回", callback_data=back_callback or f"admin:rg:{rule_group_id}")
         ])
         
         return keyboard
 
-    @CallbackRegistry.register(r"^admin:logs$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:logs$")
     async def handle_logs(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理日志查看回调"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
+
+        rule_group_id = query.data.split(":")[2]
 
         # 获取待审核申诉数量
         pending_appeals = await self.moderation_log_service.get_pending_appeals(limit=1)
@@ -66,12 +71,12 @@ class AdminLogHandler(AdminBaseHandler):
         keyboard = [
             [InlineKeyboardButton(
                 f"待处理申诉 ({pending_count})", 
-                callback_data="admin:logs:pending:1"
+                callback_data=f"admin:rg:{rule_group_id}:logs:pending:1"
             )],
-            [InlineKeyboardButton("违规记录", callback_data="admin:logs:violations:1"),
-             InlineKeyboardButton("审核记录", callback_data="admin:logs:reviews:1")],
-            [InlineKeyboardButton("审核统计", callback_data="admin:logs:stats"),
-             InlineKeyboardButton("« 返回", callback_data="admin:back")]
+            [InlineKeyboardButton("违规记录", callback_data=f"admin:rg:{rule_group_id}:logs:violations:1"),
+             InlineKeyboardButton("审核记录", callback_data=f"admin:rg:{rule_group_id}:logs:reviews:1")],
+            [InlineKeyboardButton("审核统计", callback_data=f"admin:rg:{rule_group_id}:logs:stats"),
+             InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_group_id}")]
         ]
 
         await self._safe_edit_message(
@@ -81,7 +86,7 @@ class AdminLogHandler(AdminBaseHandler):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    @CallbackRegistry.register(r"^admin:logs:pending:(\d+)$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:logs:pending:(\d+)$")
     async def handle_pending_logs(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理待审核日志查看"""
         query = update.callback_query
@@ -89,6 +94,7 @@ class AdminLogHandler(AdminBaseHandler):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
+        rule_group_id = query.data.split(":")[2]
         page = int(query.data.split(":")[-1])
         offset = (page - 1) * self.page_size
         
@@ -121,7 +127,9 @@ class AdminLogHandler(AdminBaseHandler):
         keyboard = self._get_pagination_keyboard(
             current_page=page,
             has_next=has_next,
-            base_callback="admin:logs:pending"
+            base_callback=f"admin:rg:{rule_group_id}:logs:pending",
+            rule_group_id=rule_group_id,
+            back_callback=f"admin:rg:{rule_group_id}:logs"
         )
         
         # 如果有记录,添加审核按钮
@@ -130,11 +138,11 @@ class AdminLogHandler(AdminBaseHandler):
                 keyboard.insert(-1, [
                     InlineKeyboardButton(
                         f"✅ 通过 #{log.id}", 
-                        callback_data=f"admin:logs:approve:{log.id}"
+                        callback_data=f"admin:rg:{rule_group_id}:logs:approve:{log.id}"
                     ),
                     InlineKeyboardButton(
                         f"❌ 驳回 #{log.id}",
-                        callback_data=f"admin:logs:reject:{log.id}"
+                        callback_data=f"admin:rg:{rule_group_id}:logs:reject:{log.id}"
                     )
                 ])
         
@@ -144,7 +152,7 @@ class AdminLogHandler(AdminBaseHandler):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    @CallbackRegistry.register(r"^admin:logs:(approve|reject):(\d+)$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:logs:(approve|reject):(\d+)$")
     async def handle_review_action(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理审核操作"""
         query = update.callback_query
@@ -152,7 +160,8 @@ class AdminLogHandler(AdminBaseHandler):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
             
-        action = query.data.split(":")[2]
+        rule_group_id = query.data.split(":")[2]
+        action = query.data.split(":")[4]
         log_id = int(query.data.split(":")[-1])
         
         # 更新审核状态
@@ -175,16 +184,16 @@ class AdminLogHandler(AdminBaseHandler):
         current_page = 1  # 默认第1页
         for row in query.message.reply_markup.inline_keyboard:
             for button in row:
-                if button.callback_data.startswith("admin:logs:pending:"):
+                if button.callback_data.startswith(f"admin:rg:{rule_group_id}:logs:pending:"):
                     current_page = int(button.callback_data.split(":")[-1])
                     break
         
         # 重新调用handle_pending_logs
         context.user_data["callback_query"] = query
-        context.user_data["callback_data"] = f"admin:logs:pending:{current_page}"
+        context.user_data["callback_data"] = f"admin:rg:{rule_group_id}:logs:pending:{current_page}"
         await self.handle_pending_logs(update, context)
 
-    @CallbackRegistry.register(r"^admin:logs:violations:(\d+)$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:logs:violations:(\d+)$")
     async def handle_violations(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理违规记录查看"""
         query = update.callback_query
@@ -192,10 +201,9 @@ class AdminLogHandler(AdminBaseHandler):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
-        page = int(query.data.split(":")[-1])
-        offset = (page - 1) * self.page_size
+        rule_group_id = query.data.split(":")[2]
         
-        # 获取违规记录
+        # 获取违规统计
         violations = await self.user_moderation_service.get_violation_stats()
         
         if not violations:
@@ -211,7 +219,7 @@ class AdminLogHandler(AdminBaseHandler):
                 )
 
         keyboard = [
-            [InlineKeyboardButton("« 返回", callback_data="admin:logs")]
+            [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_group_id}:logs")]
         ]
         
         await self._safe_edit_message(
@@ -220,7 +228,7 @@ class AdminLogHandler(AdminBaseHandler):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    @CallbackRegistry.register(r"^admin:logs:reviews:(\d+)$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:logs:reviews:(\d+)$")
     async def handle_reviews(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理审核记录查看"""
         query = update.callback_query
@@ -228,8 +236,7 @@ class AdminLogHandler(AdminBaseHandler):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
 
-        page = int(query.data.split(":")[-1])
-        offset = (page - 1) * self.page_size
+        rule_group_id = query.data.split(":")[2]
         
         # 获取审核统计
         stats = await self.moderation_log_service.get_review_stats()
@@ -249,7 +256,7 @@ class AdminLogHandler(AdminBaseHandler):
                 )
 
         keyboard = [
-            [InlineKeyboardButton("« 返回", callback_data="admin:logs")]
+            [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_group_id}:logs")]
         ]
         
         await self._safe_edit_message(
@@ -258,13 +265,15 @@ class AdminLogHandler(AdminBaseHandler):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    @CallbackRegistry.register(r"^admin:logs:stats$")
+    @CallbackRegistry.register(r"^admin:rg:.{16}:logs:stats$")
     async def handle_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理统计信息查看"""
         query = update.callback_query
         if not self._is_admin(query.from_user.id):
             await query.answer("⚠️ 没有权限", show_alert=True)
             return
+            
+        rule_group_id = query.data.split(":")[2]
             
         # 获取各种统计信息
         review_stats = await self.moderation_log_service.get_review_stats()
@@ -286,7 +295,7 @@ class AdminLogHandler(AdminBaseHandler):
             text += f"{status}: {stat['avg_confidence']:.2%}\n"
         
         keyboard = [
-            [InlineKeyboardButton("« 返回", callback_data="admin:logs")]
+            [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_group_id}:logs")]
         ]
         
         await self._safe_edit_message(
