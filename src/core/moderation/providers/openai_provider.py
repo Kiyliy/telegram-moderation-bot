@@ -2,10 +2,13 @@
 
 from typing import List, Union, Dict
 import aiohttp
-from src.core.moderation.base import BaseProvider
-from src.core.moderation.models import ModerationInput, ModerationResult, ContentType, ModerationCategory, ModerationResponse
+from src.core.moderation.models import ModerationInput, ModerationResult, ContentType, ModerationCategory
 from src.core.moderation.utils.video import VideoProcessor
 from src.core.moderation.providers.base import IModerationProvider
+from src.core.tools.base64tools import base64_img_url
+import cv2
+import asyncio
+import os
 
 class OpenAIModerationProvider(IModerationProvider):
     """OpenAI审核服务提供者"""
@@ -20,138 +23,127 @@ class OpenAIModerationProvider(IModerationProvider):
     def provider_name(self) -> str:
         return "openai"
 
-    async def _process_video(self, url: str) -> List[ModerationInput]:
-        """处理视频内容"""
-        frame_paths = await VideoProcessor.process_video(url)
-        return [
-            ModerationInput(
-                type=ContentType.IMAGE,
-                content=frame_path
-            ) for frame_path in frame_paths
-        ]
+    async def _make_request(self, inputs: List[Dict], max_retries: int = 3) -> Dict:
+        """发送请求到OpenAI API"""
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        self.base_url,
+                        json={"model": self.model, "input": inputs},
+                        headers={
+                            "Authorization": f"Bearer {self.api_key}",
+                            "Content-Type": "application/json"
+                        }
+                    ) as response:
+                        if response.status != 200:
+                            error_text = await response.text()
+                            raise ValueError(f"OpenAI API error: {error_text}")
+                        return await response.json()
+            except Exception as e:
+                last_error = e
+                if attempt == max_retries - 1:
+                    raise ValueError(f"Moderation failed after {max_retries} attempts: {str(last_error)}")
+                await asyncio.sleep(1 * (attempt + 1))  # 指数退避
 
-    async def _check_single(self, input_data: ModerationInput) -> Dict:
-        """检查单个内容"""
-        payload = {
-            "model": self.model,
-            "input": []
-        }
-
+    async def _prepare_input(self, input_data: ModerationInput) -> List[Dict]:
+        """准备API输入数据"""
+        api_inputs = []
+        
         if input_data.type == ContentType.TEXT:
-            payload["input"].append({
+            api_inputs.append({
                 "type": "text",
                 "text": input_data.content
             })
         elif input_data.type == ContentType.IMAGE:
-            if isinstance(input_data.content, list):
-                for url in input_data.content:
-                    payload["input"].append({
+            # 处理单个URL或URL列表
+            urls = input_data.content if isinstance(input_data.content, list) else [input_data.content]
+            for url in urls:
+                # 转换为base64
+                base64_image = await base64_img_url(url)
+                if base64_image:
+                    api_inputs.append({
                         "type": "image_url",
-                        "image_url": {"url": url}
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
                     })
-            else:
-                payload["input"].append({
-                    "type": "image_url",
-                    "image_url": {"url": input_data.content}
-                })
+            
+        return api_inputs
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                self.base_url,
-                json=payload,
-                headers={"Authorization": f"Bearer {self.api_key}"}
-            ) as response:
-                return await response.json()
+    def _process_api_response(self, response: Dict, input_data: ModerationInput) -> ModerationResult:
+        """处理API响应"""
+        # 合并所有结果
+        flagged = False
+        categories = {}
+        
+        for result in response["results"]:
+            # 更新整体违规标记
+            flagged = flagged or result["flagged"]
+            
+            # 处理每个类别
+            for category, score in result["category_scores"].items():
+                if category not in categories:
+                    categories[category] = ModerationCategory(
+                        flagged=False,
+                        score=0.0,
+                        details={"applied_input_types": []}
+                    )
+                
+                # 更新分数（取最高分）
+                if score > categories[category].score:
+                    categories[category].score = score
+                    categories[category].flagged = result["categories"][category]
+                
+                # 更新应用的输入类型
+                if category in result.get("category_applied_input_types", {}):
+                    applied_types = result["category_applied_input_types"][category]
+                    categories[category].details["applied_input_types"].extend(
+                        t for t in applied_types 
+                        if t not in categories[category].details["applied_input_types"]
+                    )
+
+        return ModerationResult(
+            flagged=flagged,
+            categories=categories,
+            provider=self.provider_name,
+            raw_response=response,
+            input_type=input_data.type,
+            input_content=input_data.content
+        )
 
     async def check_content(
         self, 
         content: Union[ModerationInput, List[ModerationInput]]
     ) -> ModerationResult:
         """审核内容"""
-        if isinstance(content, ModerationInput):
-            content = [content]
-
-        results = []
-        for input_data in content:
-            if input_data.type == ContentType.VIDEO:
+        temp_files = []  # 跟踪临时文件
+        try:
+            if isinstance(content, list):
+                content = content[0]
+                
+            if content.type == ContentType.VIDEO:
                 # 处理视频
-                video_frames = await self._process_video(input_data.content)
-                for frame in video_frames:
-                    result = await self._check_single(frame)
-                    results.append(result)
-            else:
-                # 处理文本或图片
-                result = await self._check_single(input_data)
-                results.append(result)
-
-        # 合并结果
-        final_result = self._merge_results(results, content[0])
-        return final_result
-
-    def _merge_results(self, results: List[Dict], input_data: ModerationInput) -> ModerationResult:
-        """合并多个结果"""
-        
-        categories = {}
-        flagged = False
-
-        # 遍历所有结果,取最高分
-        for result in results:
-            for category, score in result["results"][0]["category_scores"].items():
-                if category not in categories:
-                    categories[category] = ModerationCategory(
-                        flagged=False,
-                        score=0.0
-                    )
-                categories[category].score = max(
-                    categories[category].score,
-                    score
+                frame_paths = await VideoProcessor.process_video(content.content)
+                temp_files.extend(frame_paths)  # 记录临时文件
+                content = ModerationInput(
+                    type=ContentType.IMAGE,
+                    content=frame_paths
                 )
-                if score > 0.5:  # 可配置的阈值
-                    categories[category].flagged = True
-                    flagged = True
-
-        return ModerationResult(
-            flagged=flagged,
-            categories=categories,
-            provider=self.provider_name,
-            raw_response=results,
-            input_type=input_data.type,
-            input_content=input_data.content
-        )
-
-class OpenAIProvider(BaseProvider):
-    async def check_contents(
-        self, 
-        inputs: List[ModerationInput]
-    ) -> ModerationResponse:
-        # OpenAI 只支持文本,所以我们需要过滤
-        text_inputs = [
-            input.content for input in inputs 
-            if input.type == "text"
-        ]
-        
-        if not text_inputs:
-            return ModerationResponse(
-                id="no-text-content",
-                results=[],
-                raw_response={}
-            )
+                
+            api_inputs = await self._prepare_input(content)
+            response = await self._make_request(api_inputs)
+            return self._process_api_response(response, content)
             
-        response = await self.client.moderations.create(
-            input=text_inputs
-        )
-        
-        return ModerationResponse(
-            id=response.id,
-            results=[
-                ModerationResult(
-                    flagged=result.flagged,
-                    categories=result.categories,
-                    category_scores=result.category_scores,
-                    content=text_inputs[i],
-                    content_type="text"
-                )
-                for i, result in enumerate(response.results)
-            ],
-            raw_response=response.model_dump()
-        )
+        except Exception as e:
+            raise ValueError(f"Moderation failed: {str(e)}")
+        finally:
+            # 清理临时文件
+            for path in temp_files:
+                try:
+                    if os.path.exists(path):
+                        os.unlink(path)
+                except Exception:
+                    pass  # 忽略清理错误
+
