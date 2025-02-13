@@ -497,3 +497,17 @@ pymysql.err.ProgrammingError: (1064, "You have an error in your SQL syntax; chec
 [INFO] 2025-02-13 10:15:10,789 - member_system_logger - INFO - 用户 mytest 已存在
 [INFO] 2025-02-13 10:16:04,563 - member_system_logger - INFO - 数据库 mytest 已存在
 [INFO] 2025-02-13 10:16:04,566 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 10:20:42,100 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 10:20:42,102 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 10:33:43,487 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 10:33:43,489 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 11:11:27,081 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 11:11:27,084 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 11:15:18,375 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 11:15:18,377 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 11:15:32,473 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 11:15:32,476 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 11:17:12,623 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 11:17:12,625 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-13 11:20:41,908 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-13 11:20:41,910 - member_system_logger - INFO - 用户 mytest 已存在

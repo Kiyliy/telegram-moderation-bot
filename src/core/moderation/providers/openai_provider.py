@@ -92,9 +92,9 @@ class OpenAIModerationProvider(IModerationProvider):
         """处理API响应"""
         # 合并所有结果
         flagged = False
-        categories = {}
-        category_scores = {}
-        category_applied_input_types = {}
+        categories = {}  # { ["str": bool]}
+        category_scores = {}  # { ["str": float]}
+        category_applied_input_types = {}  # { ["str": List[str]]}
         
         for result in response["results"]:
             # 更新整体违规标记
@@ -102,41 +102,38 @@ class OpenAIModerationProvider(IModerationProvider):
             
             # 处理每个类别
             for category, score in result["category_scores"].items():
-                if category not in categories:
-                    categories[category] = ModerationCategory(
-                        flagged=False,
-                        score=0.00000000,
-                        applied_input_types=[],
-                        details={}
-                    )
-                    category_scores[category] = 0.00000000
-                    category_applied_input_types[category] = []
-                
-                # 更新分数（取最高分）
-                if score > categories[category].score:
-                    categories[category].score = score
+                # 初始化或更新 category_scores（取最大值）
+                if category not in category_scores or score > category_scores[category]:
                     category_scores[category] = score
-                    categories[category].flagged = result["categories"][category]
+                    categories[category] = result["categories"][category]
                 
                 # 更新应用的输入类型
                 if category in result.get("category_applied_input_types", {}):
+                    if category not in category_applied_input_types:
+                        category_applied_input_types[category] = []
+                    
                     applied_types = result["category_applied_input_types"][category]
-                    categories[category].applied_input_types.extend(
-                        t for t in applied_types 
-                        if t not in categories[category].applied_input_types
-                    )
                     category_applied_input_types[category].extend(
                         t for t in applied_types 
                         if t not in category_applied_input_types[category]
                     )
 
+        # 计算最终的单个值
+        any_category_flagged = any(categories.values())
+        max_category_score = max(category_scores.values()) if category_scores else 0.0
+        all_applied_types = list(set(
+            type_
+            for types in category_applied_input_types.values()
+            for type_ in types
+        ))
+
         return ModerationResult(
             flagged=flagged,
             provider=self.provider_name,
             raw_response=response,
-            categories=categories,
-            category_scores=category_scores,
-            category_applied_input_types=category_applied_input_types
+            categories=any_category_flagged,
+            category_scores=max_category_score,
+            category_applied_input_types=all_applied_types
         )
 
     async def check_content(
