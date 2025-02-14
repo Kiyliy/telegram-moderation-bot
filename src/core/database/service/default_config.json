@@ -5,18 +5,18 @@
         "providers": {
           "openai": {
             "categories": {
-              "sexual/minors": false,
-              "harassment": false,
-              "harassment/threatening": false,
-              "hate": false,
-              "hate/threatening": false,
-              "illicit": false,
-              "illicit/violent": false,
-              "self-harm": false,
-              "self-harm/intent": false,
-              "self-harm/instructions": false,
-              "violence": false,
-              "violence/graphic": false
+              "sexual/minors": true,
+              "harassment": true,
+              "harassment/threatening": true,
+              "hate": true,
+              "hate/threatening": true,
+              "illicit": true,
+              "illicit/violent": true,
+              "self-harm": true,
+              "self-harm/intent": true,
+              "self-harm/instructions": true,
+              "violence": true,
+              "violence/graphic": true
             },
             "sensitivity": {
               "sexual/minors": 0.8,

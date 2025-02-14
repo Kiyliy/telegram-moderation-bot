@@ -5,32 +5,32 @@
       "provider_configs": {
         "openai": {
           "categories": {
-            "sexual/minors": false,
-            "harassment": false,
-            "harassment/threatening": false,
-            "hate": false,
-            "hate/threatening": false,
-            "illicit": false,
-            "illicit/violent": false,
-            "self-harm": false,
-            "self-harm/intent": false,
-            "self-harm/instructions": false,
+            "sexual/minors": true,
+            "harassment": true,
+            "harassment/threatening": true,
+            "hate": true,
+            "hate/threatening": true,
+            "illicit": true,
+            "illicit/violent": true,
+            "self-harm": true,
+            "self-harm/intent": true,
+            "self-harm/instructions": true,
             "violence": true,
-            "violence/graphic": false
+            "violence/graphic": true
           },
           "sensitivity": {
-            "sexual/minors": false,
-            "harassment": false,
-            "harassment/threatening": false,
-            "hate": false,
-            "hate/threatening": false,
-            "illicit": false,
-            "illicit/violent": false,
-            "self-harm": false,
-            "self-harm/intent": false,
-            "self-harm/instructions": false,
-            "violence": true,
-            "violence/graphic": false
+            "sexual/minors": 0.8,
+            "harassment": 0.8,
+            "harassment/threatening": 0.8,
+            "hate": 0.8,
+            "hate/threatening": 0.8,
+            "illicit": 0.8,
+            "illicit/violent": 0.8,
+            "self-harm": 0.8,
+            "self-harm/intent": 0.8,
+            "self-harm/instructions": 0.8,
+            "violence": 0.8,
+            "violence/graphic": 0.8
           }
         },
         "other_provider": {
