@@ -25,7 +25,7 @@ class ModerationMenuHandler(AdminBaseHandler):
 
         keyboard = [
             [InlineKeyboardButton("审核规则设置", callback_data=f"admin:rg:{rule_id}:mo:rules"),
-             InlineKeyboardButton("敏感度设置", callback_data=f"admin:rg:{rule_id}:mo:sensitivity")],
+             InlineKeyboardButton("敏感度设置", callback_data=f"admin:rg:{rule_id}:mo:sen")],
             [InlineKeyboardButton("警告消息设置", callback_data=f"admin:rg:{rule_id}:mo:warning"),
              InlineKeyboardButton("自动处理设置", callback_data=f"admin:rg:{rule_id}:mo:auto")],
             [InlineKeyboardButton("惩罚措施设置", callback_data=f"admin:rg:{rule_id}:mo:punishment")],
