@@ -28,7 +28,8 @@ class ModerationMenuHandler(AdminBaseHandler):
              InlineKeyboardButton("敏感度设置", callback_data=f"admin:rg:{rule_id}:mo:sen")],
             [InlineKeyboardButton("警告消息设置", callback_data=f"admin:rg:{rule_id}:mo:warning"),
              InlineKeyboardButton("自动处理设置", callback_data=f"admin:rg:{rule_id}:mo:auto")],
-            [InlineKeyboardButton("惩罚措施设置", callback_data=f"admin:rg:{rule_id}:mo:punishment")],
+            [InlineKeyboardButton("惩罚措施设置", callback_data=f"admin:rg:{rule_id}:mo:punishment"),
+             InlineKeyboardButton("其它设置", callback_data=f"admin:rg:{rule_id}:mo:other")],
             [InlineKeyboardButton("Provider选择", callback_data=f"admin:rg:{rule_id}:mo:provider:list")],
             [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_id}")]
         ]

@@ -21,6 +21,17 @@ class TestPhotoHandler(AdminBaseHandler):
         # 初始化审核管理器
         self.moderation_manager = RuleGroupModerationConfigMiddleware()
         self.chat_service = ChatService()
+        
+    async def is_manager(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+        # 获取用户ID和群组ID
+        user_id = update.message.from_user.id
+        chat_id = update.message.chat.id
+        
+        # 获取用户在群组中的成员信息
+        chat_member = await context.bot.get_chat_member(chat_id, user_id)
+        
+        # 检查用户状态
+        return chat_member.status in ['administrator', 'creator', 'owner']
 
     @MessageRegistry.register(MessageFilters.match_media_type(['photo']))  # 直接注册图片消息处理器
     async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -33,6 +44,9 @@ class TestPhotoHandler(AdminBaseHandler):
         rule_group_id = await self.chat_service.get_chat_rule_group_id(chat_id)
         
         await update.message.reply_text("🔍 正在审核图片...")
+        
+        # 获取是否是管理员
+        is_manager = await self.is_manager(update, context)
         
         try:
             # 获取最大尺寸的图片
@@ -50,7 +64,11 @@ class TestPhotoHandler(AdminBaseHandler):
             )
             
             # 执行审核
-            result: ModerationResult = await self.moderation_manager.check_content(rule_group_id=rule_group_id, content=input_data)
+            result: ModerationResult = await self.moderation_manager.check_content(
+                rule_group_id=rule_group_id, 
+                content=input_data, 
+                is_manager=is_manager
+                )
             print(result)
             
             # 格式化结果
@@ -86,6 +104,9 @@ class TestPhotoHandler(AdminBaseHandler):
         chat_id = update.effective_chat.id
         rule_group_id = await self.chat_service.get_chat_rule_group_id(chat_id)
         
+        # 获取是否是管理员
+        is_manager = await self.is_manager(update, context)
+        
         try:
             video = update.message.video
             file = await context.bot.get_file(video.file_id)
@@ -97,7 +118,11 @@ class TestPhotoHandler(AdminBaseHandler):
             )
             
             # 执行审核
-            result: ModerationResult = await self.moderation_manager.check_content(rule_group_id=rule_group_id, content=input_data)
+            result: ModerationResult = await self.moderation_manager.check_content(
+                rule_group_id=rule_group_id, 
+                content=input_data, 
+                is_manager=is_manager
+                )
             
             # 格式化结果
             text = "📋 审核结果:\n\n"

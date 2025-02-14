@@ -45,11 +45,30 @@ class RuleGroupModerationConfigMiddleware(ModerationManager):
     async def check_content(
         self,
         rule_group_id: str,
-        content: ModerationInputContent
+        content: ModerationInputContent,
+        is_manager: bool = False
     ) -> ModerationResult:
+        """
+        审核内容
+        
+        Args:
+            rule_group_id: 规则组ID
+            content: 审核内容
+        """
+        # 获取是否跳过管理员
+        skip_manager = await rule_group_config.get_config(
+            rule_group_id,
+            configkey.moderation.SKIP_MANAGER
+        )
+        
+        # 如果skip_manager为True, 则不进行审核
+        if skip_manager:
+            return ModerationResult(flagged=False)
+        
         # 如果rule_group_id为空, 则使用默认的provider
         if not rule_group_id:
             return await super().check_content(content, "openai", None)
+        
         current_provider, provider_configs = await self.get_moderation_config(rule_group_id)
         return await super().check_content(content, current_provider, provider_configs)
     

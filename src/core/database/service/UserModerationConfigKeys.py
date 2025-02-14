@@ -7,7 +7,7 @@ class UserModerationConfigKeys:
 
         PROVIDER_LIST: str = 'moderation.provider_list'
         ACTIVE_PROVIDER: str = 'moderation.active_provider'
-    
+        SKIP_MANAGER: str = 'moderation.skip_manager'
 
         class auto_actions:
             """自动处理动作"""

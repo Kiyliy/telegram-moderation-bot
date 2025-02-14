@@ -26,11 +26,11 @@ class ModerationCategory(BaseModel):
 class ModerationResult(BaseModel):
     """单条审核结果"""
     flagged: bool
-    provider: str
-    raw_response: Optional[Dict[str, Any]] = None
-    categories: Optional[Dict[str, bool]] = None
-    category_scores: Optional[Dict[str, float]] = None
-    category_applied_input_types: Optional[List[str]] = None
+    provider: str = "openai"
+    raw_response: Optional[Dict[str, Any]] = {}
+    categories: Optional[Dict[str, bool]] = {}
+    category_scores: Optional[Dict[str, float]] = {}
+    category_applied_input_types: Optional[List[str]] = []
 
 class ModerationResponse(BaseModel):
     """完整的审核响应"""
@@ -39,26 +39,3 @@ class ModerationResponse(BaseModel):
     results: List[ModerationResult]
     raw_response: Dict[str, Any]
 
-class BaseProvider:
-    """审核提供者基类"""
-    name: str = "base"  # 提供者标识
-    
-    async def check_contents(
-        self, 
-        inputs: List[ModerationInputContent]
-    ) -> ModerationResponse:
-        """批量审核内容"""
-        raise NotImplementedError
-        
-    async def check_content(
-        self, 
-        content: Union[str, HttpUrl], 
-        type: ContentType = ContentType.TEXT
-    ) -> ModerationResponse:
-        """单条审核(便捷方法)"""
-        input_content = ModerationInputContent(
-            type=type,
-            text=content if type == ContentType.TEXT else None,
-            image_urls=[content] if type == ContentType.IMAGE_URL else None
-        )
-        return await self.check_contents([input_content]) 
