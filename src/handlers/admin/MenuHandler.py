@@ -5,9 +5,10 @@ from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.MessageFilters import MessageFilters
 from src.core.registry.CallbackRegistry import CallbackRegistry
 
-class MenuHandler(AdminBaseHandler):
+class AdminMenuHandler(AdminBaseHandler):
     def __init__(self):
         super().__init__()
+        
 
     def get_admin_menu_keyboard(self) -> InlineKeyboardMarkup:
         """获取管理员主菜单键盘"""
@@ -21,7 +22,6 @@ class MenuHandler(AdminBaseHandler):
 
 
     @MessageRegistry.register(MessageFilters.match_regex(r'^/?admin$'))
-    @CallbackRegistry.register(r"^admin$")
     async def handle_admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理/admin命令"""
         if not self._is_admin(update.effective_user.id):
@@ -41,4 +41,4 @@ class MenuHandler(AdminBaseHandler):
                 reply_markup=self.get_admin_menu_keyboard()
             )
 
-MenuHandler()
+AdminMenuHandler()
