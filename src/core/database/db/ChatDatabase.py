@@ -221,3 +221,4 @@ class ChatDatabase(BaseDatabase):
         WHERE chat_id = %s
         """
         row = await self.fetch_one(sql, (chat_id,))
+        return row[0] if row else None

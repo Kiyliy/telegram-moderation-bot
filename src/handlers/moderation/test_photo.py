@@ -50,7 +50,7 @@ class TestPhotoHandler(AdminBaseHandler):
             )
             
             # 执行审核
-            result = await self.moderation_manager.check_content(rule_group_id=rule_group_id, input_data=input_data)
+            result = await self.moderation_manager.check_content(rule_group_id=rule_group_id, content=input_data)
             print(result)
             # 格式化结果
             text = "📋 审核结果:\n\n"

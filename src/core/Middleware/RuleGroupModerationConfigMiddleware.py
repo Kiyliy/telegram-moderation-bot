@@ -37,7 +37,7 @@ class RuleGroupModerationConfigMiddleware(ModerationManager):
         # 获取provider的配置
         provider_configs = await rule_group_config.get_config(
             rule_group_id,
-            getattr(configkey.moderation.providers, current_provider.lower())
+            getattr(configkey.moderation.providers, current_provider.upper())
         )
         
         return current_provider, provider_configs
@@ -49,7 +49,7 @@ class RuleGroupModerationConfigMiddleware(ModerationManager):
     ) -> ModerationResult:
         # 如果rule_group_id为空, 则使用默认的provider
         if not rule_group_id:
-            return super().check_content(content, "openai", None)
+            return await super().check_content(content, "openai", None)
         current_provider, provider_configs = await self.get_moderation_config(rule_group_id)
-        return super().check_content(content, current_provider, provider_configs)
+        return await super().check_content(content, current_provider, provider_configs)
     

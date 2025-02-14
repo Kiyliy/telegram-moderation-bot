@@ -28,8 +28,8 @@ class ModerationResult(BaseModel):
     flagged: bool
     provider: str
     raw_response: Optional[Dict[str, Any]] = None
-    categories: Optional[bool] = None
-    category_scores: Optional[float] = None
+    categories: Optional[Dict[str, bool]] = None
+    category_scores: Optional[Dict[str, float]] = None
     category_applied_input_types: Optional[List[str]] = None
 
 class ModerationResponse(BaseModel):
