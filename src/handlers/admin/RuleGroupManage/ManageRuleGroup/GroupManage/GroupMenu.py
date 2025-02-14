@@ -1,7 +1,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.ext import ContextTypes
 from src.core.registry.CallbackRegistry import CallbackRegistry
-from handlers.admin.AdminBase import AdminBaseHandler
+from src.handlers.admin.AdminBase import AdminBaseHandler
 
 
 class GroupMenuHandler(AdminBaseHandler):

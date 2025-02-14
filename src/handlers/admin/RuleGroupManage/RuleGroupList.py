@@ -3,17 +3,17 @@ from telegram.ext import ContextTypes, ConversationHandler
 from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.registry.MessageFilters import MessageFilters
-from handlers.admin.AdminBase import AdminBaseHandler
+from src.handlers.admin.AdminBase import AdminBaseHandler
 from src.core.database.service.RuleGroupService import RuleGroupService
 from src.core.database.service.chatsService import ChatService
 from src.core.database.models.db_rule_group import RuleGroup
 
-class RuleGroupListLayout:
-    """规则组列表布局"""
-    InlineKeyboardButton("<<GroupList>>", callback_data="admin:rg:.{16}(:menu)?")
-    InlineKeyboardButton("创建规则组 ➕", callback_data="admin:rg:create")
-    InlineKeyboardButton("查看规则组 📋", callback_data="admin:rg:list")
-    InlineKeyboardButton("« 返回", callback_data="admin")
+# class RuleGroupListLayout:
+#     """规则组列表布局"""
+#     InlineKeyboardButton("<<GroupList>>", callback_data="admin:rg:.{16}(:menu)?")
+#     InlineKeyboardButton("创建规则组 ➕", callback_data="admin:rg:create")
+#     InlineKeyboardButton("查看规则组 📋", callback_data="admin:rg:list")
+#     InlineKeyboardButton("« 返回", callback_data="admin")
 
 
 class RuleGroupListHandler(AdminBaseHandler):

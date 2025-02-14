@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from handlers.admin.AdminBase import AdminBaseHandler
+from src.handlers.admin.AdminBase import AdminBaseHandler
 from src.core.database.service.RuleGroupConfig import rule_group_config
 from src.core.database.service.UserModerationConfigKeys import UserModerationConfigKeys as configkey
 from typing import Optional

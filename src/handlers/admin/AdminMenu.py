@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from handlers.admin.AdminBase import AdminBaseHandler
+from src.handlers.admin.AdminBase import AdminBaseHandler
 from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.MessageFilters import MessageFilters
 from src.core.registry.CallbackRegistry import CallbackRegistry
