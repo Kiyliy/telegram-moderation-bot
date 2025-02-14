@@ -15,10 +15,10 @@ class MenuHandler(AdminBaseHandler):
             [InlineKeyboardButton("📋 规则组管理", callback_data="admin:rg:list")],
             [InlineKeyboardButton("👥 群组管理", callback_data="admin:group")],
             [InlineKeyboardButton("⚖️ 审核管理", callback_data="admin:mo")],
-            [InlineKeyboardButton("📊 统计信息", callback_data="admin:stats")],
-            [InlineKeyboardButton("测试", callback_data="test:photo")]
+            [InlineKeyboardButton("📊 统计信息", callback_data="admin:stats")]
         ]
         return InlineKeyboardMarkup(keyboard)
+
 
     @MessageRegistry.register(MessageFilters.match_regex(r'^/?admin$'))
     @CallbackRegistry.register(r"^admin$")
