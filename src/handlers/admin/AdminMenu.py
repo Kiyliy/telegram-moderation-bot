@@ -10,7 +10,7 @@ class AdminMenuHandler(AdminBaseHandler):
         super().__init__()
         
 
-    def get_admin_menu_keyboard(self) -> InlineKeyboardMarkup:
+    def _get_admin_menu_keyboard(self) -> InlineKeyboardMarkup:
         """获取管理员主菜单键盘"""
         keyboard = [
             [InlineKeyboardButton("📋 规则组管理", callback_data="admin:rg:list")],
@@ -33,13 +33,13 @@ class AdminMenuHandler(AdminBaseHandler):
             await update.message.reply_text(
                 "👋 欢迎使用管理员控制面板\n"
                 "请选择要进行的操作:",
-                reply_markup=self.get_admin_menu_keyboard()
+                reply_markup=self._get_admin_menu_keyboard()
             )
         else:
             await update.callback_query.edit_message_text(
                 "👋 欢迎使用管理员控制面板\n"
                 "请选择要进行的操作:",
-                reply_markup=self.get_admin_menu_keyboard()
+                reply_markup=self._get_admin_menu_keyboard()
             )
 
 AdminMenuHandler()
