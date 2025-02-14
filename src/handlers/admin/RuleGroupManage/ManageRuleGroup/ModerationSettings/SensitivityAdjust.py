@@ -97,7 +97,7 @@ class SensitivityAdjustHandler(AdminBaseHandler):
         # 将配置key标准化处理
         provider_sensitivities_fix = {}
         for key, value in provider_sensitivities.items():
-            provider_sensitivities_fix[key.upper().replace("/", "_")] = value
+            provider_sensitivities_fix[key.upper().replace("/", "_").replace("-", "_")] = value
 
         text = f"⚙️ 敏感度设置 (Provider: {current_provider})\n\n"
         text += "当前状态:\n"

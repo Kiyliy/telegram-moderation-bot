@@ -71,7 +71,7 @@ class EnableSettingHandler(AdminBaseHandler):
         # 将/替换为_ 以作为回调的callback_data
         provider_categories_fix = {}
         for key, value in provider_categories.items():
-            provider_categories_fix[key.upper().replace("/", "_")] = value
+            provider_categories_fix[key.upper().replace("/", "_").replace("-", "_")] = value
         
         text = f"⚙️ 审核规则设置 (Provider: {current_provider})\n\n"
         text += "请选择要启用的规则检测项:"

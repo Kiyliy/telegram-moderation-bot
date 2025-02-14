@@ -703,3 +703,11 @@ pymysql.err.ProgrammingError: (1064, "You have an error in your SQL syntax; chec
 [INFO] 2025-02-14 09:15:20,984 - member_system_logger - INFO - 用户 mytest 已存在
 [INFO] 2025-02-14 09:20:54,735 - member_system_logger - INFO - 数据库 mytest 已存在
 [INFO] 2025-02-14 09:20:54,737 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-14 10:40:16,224 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-14 10:40:16,227 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-14 10:41:36,421 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-14 10:41:36,423 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-14 10:48:27,077 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-14 10:48:27,080 - member_system_logger - INFO - 用户 mytest 已存在
+[INFO] 2025-02-14 10:48:40,942 - member_system_logger - INFO - 数据库 mytest 已存在
+[INFO] 2025-02-14 10:48:40,944 - member_system_logger - INFO - 用户 mytest 已存在
