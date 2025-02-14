@@ -220,6 +220,10 @@ class ChatService:
     ) -> List[ChatInfo]:
         """获取规则组内的所有群组"""
         return await self.db.get_chats_by_rule_group(rule_group_id)
+    
+    async def get_chat_rule_group_id(self, chat_id: int) -> str:
+        """获取群组的规则组id"""
+        return await self.db.get_chat_rule_group_id(chat_id)
 
     async def get_unbound_chats(self, user_id) -> List[ChatInfo]:
         """

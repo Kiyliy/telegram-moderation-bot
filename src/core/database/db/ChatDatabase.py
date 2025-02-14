@@ -213,3 +213,11 @@ class ChatDatabase(BaseDatabase):
         """
         rows = await self.fetch_all(sql, (user_id,))
         return [ChatInfo.from_list(row) for row in rows]
+
+    async def get_chat_rule_group_id(self, chat_id: int) -> str:
+        """获取群组的规则组id"""
+        sql = f"""
+        SELECT rule_group_id FROM {self.table_name}
+        WHERE chat_id = %s
+        """
+        row = await self.fetch_one(sql, (chat_id,))
