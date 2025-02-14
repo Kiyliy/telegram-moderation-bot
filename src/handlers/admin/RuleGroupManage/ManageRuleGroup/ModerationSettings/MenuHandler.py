@@ -13,29 +13,32 @@ class MenuHandler(AdminBaseHandler):
     def __init__(self):
         super().__init__()
         self.rule_group_service = RuleGroupService()
-        
-    def _get_menu_keyboard(self, rule_group_id: str) -> InlineKeyboardMarkup:
-        """获取审核设置主菜单"""
+    
+    @CallbackRegistry.register(r"^admin:rg:.{16}:mo(:menu)?$")
+    async def handle_settings(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理审核设置回调"""
+        query = update.callback_query
+        rule_id = query.data.split(":")[2]
+        if not self._is_admin(query.from_user.id):
+            await query.answer("⚠️ 没有权限", show_alert=True)
+            return
+
         keyboard = [
-            # [
-            #     InlineKeyboardButton("审核规则", callback_data=f"admin:rg:{rule_group_id}:mo:rules"),
-            #     InlineKeyboardButton("敏感度", callback_data=f"admin:rg:{rule_group_id}:mo:sensitivity")
-            # ],
-            [
-                InlineKeyboardButton("选择审核提供者", callback_data=f"admin:rg:{rule_group_id}:mo:provider:list")
-            ]
-            [
-                InlineKeyboardButton("警告消息", callback_data=f"admin:rg:{rule_group_id}:mo:warning"),
-                InlineKeyboardButton("自动处理", callback_data=f"admin:rg:{rule_group_id}:mo:auto")
-            ],
-            [
-                InlineKeyboardButton("惩罚措施", callback_data=f"admin:rg:{rule_group_id}:mo:punishment"),
-                InlineKeyboardButton("群组管理", callback_data=f"admin:rg:{rule_group_id}:mo:groups")
-            ],
-            [InlineKeyboardButton("« 返回规则组列表", callback_data="admin:rule_groups:list")]
+            [InlineKeyboardButton("审核规则设置", callback_data=f"admin:rg:{rule_id}:mo:rules"),
+             InlineKeyboardButton("敏感度设置", callback_data=f"admin:rg:{rule_id}:mo:sensitivity")],
+            [InlineKeyboardButton("警告消息设置", callback_data=f"admin:rg:{rule_id}:mo:warning"),
+             InlineKeyboardButton("自动处理设置", callback_data=f"admin:rg:{rule_id}:mo:auto")],
+            [InlineKeyboardButton("惩罚措施设置", callback_data=f"admin:rg:{rule_id}:mo:punishment")],
+            [InlineKeyboardButton("Provider选择", callback_data=f"admin:rg:{rule_id}:mo:provider:list")],
+            [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_id}")]
         ]
-        return InlineKeyboardMarkup(keyboard)
-        
+
+        await self._safe_edit_message(
+            query,
+            "⚙️ 审核设置\n"
+            "请选择要修改的设置项：",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
 # 初始化处理器
 MenuHandler() 

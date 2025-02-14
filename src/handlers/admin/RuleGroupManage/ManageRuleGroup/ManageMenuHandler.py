@@ -5,7 +5,7 @@ from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.registry.MessageFilters import MessageFilters
 from src.handlers.admin.base import AdminBaseHandler
 
-class EditRuleGroupMenuHanlder(AdminBaseHandler):
+class ManageMenuHanlder(AdminBaseHandler):
     """规则组管理中心"""
     
     def _get_admin_main_menu(self, rule_id: str) -> InlineKeyboardMarkup:
@@ -38,31 +38,6 @@ class EditRuleGroupMenuHanlder(AdminBaseHandler):
             reply_markup=self._get_admin_main_menu(rule_id)
         )
 
-    @CallbackRegistry.register(r"^admin:rg:.{16}:mo(:menu)?$")
-    async def handle_settings(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理审核设置回调"""
-        query = update.callback_query
-        rule_id = query.data.split(":")[2]
-        if not self._is_admin(query.from_user.id):
-            await query.answer("⚠️ 没有权限", show_alert=True)
-            return
-
-        keyboard = [
-            [InlineKeyboardButton("审核规则设置", callback_data=f"admin:rg:{rule_id}:mo:rules"),
-             InlineKeyboardButton("敏感度设置", callback_data=f"admin:rg:{rule_id}:mo:sensitivity")],
-            [InlineKeyboardButton("警告消息设置", callback_data=f"admin:rg:{rule_id}:mo:warning"),
-             InlineKeyboardButton("自动处理设置", callback_data=f"admin:rg:{rule_id}:mo:auto")],
-            [InlineKeyboardButton("惩罚措施设置", callback_data=f"admin:rg:{rule_id}:mo:punishment")],
-            [InlineKeyboardButton("« 返回", callback_data=f"admin:rg:{rule_id}")]
-        ]
-
-        await self._safe_edit_message(
-            query,
-            "⚙️ 审核设置\n"
-            "请选择要修改的设置项：",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
     @CallbackRegistry.register(r"^admin:rg:.{16}:refresh$")
     async def handle_refresh(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理刷新设置回调"""
@@ -85,20 +60,4 @@ class EditRuleGroupMenuHanlder(AdminBaseHandler):
             reply_markup=self._get_admin_main_menu(rule_id)
         )
 
-    @CallbackRegistry.register(r"^admin:rg:edit$")
-    async def handle_back(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理返回规则组列表回调"""
-        query = update.callback_query
-        if not self._is_admin(query.from_user.id):
-            await query.answer("⚠️ 没有权限", show_alert=True)
-            return
-
-        await self._safe_edit_message(
-            query,
-            "👋 欢迎使用管理员控制面板\n"
-            "请选择以下功能：",
-            reply_markup=self._get_admin_main_menu()
-        )
-
-
-EditRuleGroupMenuHanlder()
+ManageMenuHanlder()
