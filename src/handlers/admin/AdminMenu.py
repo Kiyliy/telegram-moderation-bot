@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from src.handlers.admin.base import AdminBaseHandler
+from handlers.admin.AdminBase import AdminBaseHandler
 from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.MessageFilters import MessageFilters
 from src.core.registry.CallbackRegistry import CallbackRegistry
@@ -22,6 +22,7 @@ class AdminMenuHandler(AdminBaseHandler):
 
 
     @MessageRegistry.register(MessageFilters.match_regex(r'^/?admin$'))
+    @CallbackRegistry.register(r"^admin(:menu)?$")
     async def handle_admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理/admin命令"""
         if not self._is_admin(update.effective_user.id):

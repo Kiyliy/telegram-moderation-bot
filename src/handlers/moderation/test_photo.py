@@ -4,7 +4,7 @@ from telegram.ext import ContextTypes
 from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.MessageFilters import MessageFilters
-from src.handlers.admin.base import AdminBaseHandler
+from handlers.admin.AdminBase import AdminBaseHandler
 from src.core.moderation.types.ModerationTypes import ModerationInputContent, ContentType
 from src.core.moderation.manager import ModerationManager
 from src.core.moderation.providers.openai_moderation.openai_provider import OpenAIModerationProvider

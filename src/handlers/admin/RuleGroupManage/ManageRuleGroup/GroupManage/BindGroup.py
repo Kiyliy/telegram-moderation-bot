@@ -3,7 +3,7 @@ from telegram.ext import ContextTypes
 from src.core.registry.CallbackRegistry import CallbackRegistry
 from src.core.registry.MessageRegistry import MessageRegistry
 from src.core.registry.MessageFilters import MessageFilters
-from src.handlers.admin.base import AdminBaseHandler
+from handlers.admin.AdminBase import AdminBaseHandler
 from src.core.database.service.chatsService import ChatService
 import asyncio
 from src.core.database.models.db_chat import ChatInfo
