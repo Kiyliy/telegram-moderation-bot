@@ -87,24 +87,26 @@ class RuleGroupService:
         
     async def delete_rule_group(
         self,
-        group_id: int
+        rule_group_id: int
     ) -> bool:
         """
         删除规则组
+        同时将所有的绑定关系删除
         
         Args:
-            group_id: 规则组ID
+            rule_group_id: 规则组ID
             
         Returns:
             是否删除成功
         """
         # 检查是否有群组绑定到此规则组
-        chats = await self.chat_service.get_chats_by_rule_group(group_id)
+        chats = await self.chat_service.get_chats_by_rule_group(rule_group_id)
         if chats:
-            return False
+            for chat in chats:
+                await self.chat_service.unbind_chat_from_rule_group(chat.chat_id)
             
         # 删除规则组
-        return await self.rule_group_db.delete_rule_group(group_id)
+        return await self.rule_group_db.delete_rule_group(rule_group_id)
         
     async def get_rule_group(
         self,
