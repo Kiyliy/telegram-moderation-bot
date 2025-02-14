@@ -3,6 +3,7 @@
 from typing import List, Union, Optional
 from src.core.moderation.types.ModerationTypes import ModerationInputContent, ModerationResult
 from src.core.moderation.providers.base import IModerationProvider
+from src.core.moderation.types.CategoryTypes import CategorySettings
 
 class ModerationManager:
     """审核管理器"""
@@ -13,11 +14,12 @@ class ModerationManager:
     async def check_content(
         self,
         content: ModerationInputContent,
-        provider_name: Optional[str] = None
+        provider_name: Optional[str] = None,
+        settings: Optional[CategorySettings] = None
     ) -> ModerationResult:
         """审核内容"""
         if provider_name and provider_name not in self.providers:
             raise ValueError(f"Provider {provider_name} not found")
             
         provider = self.providers[provider_name] if provider_name else next(iter(self.providers.values()))
-        return await provider.check_content(content)
+        return await provider.check_content(content,settings)

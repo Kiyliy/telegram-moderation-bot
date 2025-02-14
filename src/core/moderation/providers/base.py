@@ -6,7 +6,7 @@ class IModerationProvider(ABC):
     """审核服务提供者接口"""
     
     @abstractmethod
-    async def check_content(self, content: ModerationInputContent) -> ModerationResult:
+    async def check_content(self, content: ModerationInputContent,settings) -> ModerationResult:
         """审核内容"""
         pass
 

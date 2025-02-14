@@ -9,7 +9,9 @@ from src.core.moderation.types.ModerationTypes import ModerationInputContent, Co
 from src.core.moderation.manager import ModerationManager
 from src.core.moderation.providers.openai_moderation.openai_provider import OpenAIModerationProvider
 from src.core.moderation.config import ModerationConfig
+from src.core.Middleware.RuleGroupModerationConfigMiddleware import RuleGroupModerationConfigMiddleware
 import traceback
+from src.core.database.service.chatsService import ChatService
 
 class TestPhotoHandler(AdminBaseHandler):
     """测试图片审核处理器"""
@@ -17,19 +19,19 @@ class TestPhotoHandler(AdminBaseHandler):
     def __init__(self):
         super().__init__()
         # 初始化审核管理器
-        self.moderation_manager = ModerationManager([
-            OpenAIModerationProvider(
-                api_key=ModerationConfig.OPENAI_API_KEY,
-                model=ModerationConfig.OPENAI_MODERATION_MODEL
-            )
-        ])
+        self.moderation_manager = RuleGroupModerationConfigMiddleware()
+        self.chat_service = ChatService()
 
-    # @MessageRegistry.register(MessageFilters.match_media_type(['photo','video']))  # 直接注册图片消息处理器
+    @MessageRegistry.register(MessageFilters.match_media_type(['photo']))  # 直接注册图片消息处理器
     async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理图片消息"""
         if not self._is_admin(update.effective_user.id):
             return
             
+        # 获取rule_group_id
+        chat_id = update.effective_chat.id
+        rule_group_id = await self.chat_service.get_chat_rule_group_id(chat_id)
+        
         await update.message.reply_text("🔍 正在审核图片...")
         
         try:
@@ -48,8 +50,8 @@ class TestPhotoHandler(AdminBaseHandler):
             )
             
             # 执行审核
-            result = await self.moderation_manager.check_content(input_data)
-            
+            result = await self.moderation_manager.check_content(rule_group_id=rule_group_id, input_data=input_data)
+            print(result)
             # 格式化结果
             text = "📋 审核结果:\n\n"
             text += f"是否违规: {'✅ 是' if result.flagged else '❌ 否'}\n\n"

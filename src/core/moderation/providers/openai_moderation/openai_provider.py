@@ -12,14 +12,15 @@ import asyncio
 import os
 from io import BytesIO
 from src.core.moderation.providers.openai_moderation.OpenaiCategoryTypes import OpenAISettingsType
+from src.core.moderation.config import ModerationConfig
 
 class OpenAIModerationProvider(IModerationProvider):
     """OpenAI审核服务提供者"""
     
-    def __init__(self, api_key: str, api_base: str = "https://api.openai.com/v1", model: str = "omni-moderation-latest"):
-        self.api_key = api_key
-        self.model = model
-        self.api_base = api_base
+    def __init__(self):
+        self.api_key = ModerationConfig.OPENAI_API_KEY
+        self.model = ModerationConfig.OPENAI_MODERATION_MODEL
+        self.api_base = ModerationConfig.OPENAI_API_BASE
         self.base_url = f"{self.api_base}/moderations"
 
     @property
