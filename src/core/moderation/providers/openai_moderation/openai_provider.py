@@ -90,87 +90,47 @@ class OpenAIModerationProvider(IModerationProvider):
             
         return api_inputs
 
-    def _process_api_response(self, response: Dict, input_data: ModerationInputContent) -> ModerationResult:
+    def _process_api_response(self, 
+                              response: Dict, 
+                              input_data: ModerationInputContent, 
+                              settings: Optional[OpenAISettingsType] = None
+                            ) -> ModerationResult:
         """处理API响应"""
         # 合并所有结果
         flagged = False
         categories = {}  # { ["str": bool]}
         category_scores = {}  # { ["str": float]}
-        category_applied_input_types = {}  # { ["str": List[str]]}
         
+        # 对于每个结果
         for result in response["results"]:
-            # 更新整体违规标记
-            flagged = flagged or result["flagged"]
-            
             # 处理每个类别
             for category, score in result["category_scores"].items():
-                # 初始化或更新 category_scores（取最大值）
-                if category not in category_scores or score > category_scores[category]:
-                    category_scores[category] = score
-                    categories[category] = result["categories"][category]
-                
-                # 更新应用的输入类型
-                if category in result.get("category_applied_input_types", {}):
-                    if category not in category_applied_input_types:
-                        category_applied_input_types[category] = []
-                    
-                    applied_types = result["category_applied_input_types"][category]
-                    category_applied_input_types[category].extend(
-                        t for t in applied_types 
-                        if t not in category_applied_input_types[category]
-                    )
-
-        # 计算最终的单个值
-        any_category_flagged = any(categories.values())
-        max_category_score = max(category_scores.values()) if category_scores else 0.0
-        all_applied_types = list(set(
-            type_
-            for types in category_applied_input_types.values()
-            for type_ in types
-        ))
+                # 如果设置了审核类别, 则只处理设置的类别
+                if settings:
+                    if not settings["categories"].get(category, False):
+                        continue
+                    # 记录类别, 更新分数为所有类别的最大值
+                    if category not in category_scores or score > category_scores[category]:
+                        category_scores[category] = score
+                        categories[category] = result["categories"][category]
+                        if score > settings["sensitivity"].get(category, 0.8):
+                            flagged = True
+                # 如果没有设置审核类别
+                else:
+                    # 记录类别, 更新分数为所有类别的最大值
+                    if category not in category_scores or score > category_scores[category]:
+                        category_scores[category] = score
+                        categories[category] = result["categories"][category]
+                        flagged = flagged or result['flagged']
 
         return ModerationResult(
             flagged=flagged,
             provider=self.provider_name,
             raw_response=response,
-            categories=any_category_flagged,
-            category_scores=max_category_score,
-            category_applied_input_types=all_applied_types
-        )
-
-    def _process_api_response_with_settings(
-        self, 
-        response: Dict, 
-        input_data: ModerationInputContent,
-        settings: OpenAISettingsType
-    ) -> ModerationResult:
-        """处理API响应
-        
-        Args:
-            response: OpenAI API的原始响应
-            input_data: 输入的内容
-            settings: OpenAI的审核设置
-        """
-        # 只处理启用的类别
-        categories = {}
-        category_scores = {}
-        
-        for category, score in response["results"][0]["category_scores"].items():
-            # 只处理启用的类别
-            if settings["categories"].get(category, False):
-                threshold = settings["sensitivity"].get(category, 0.5)
-                flagged = score > threshold
-                
-                categories[category] = flagged
-                category_scores[category] = score
-        
-        return ModerationResult(
-            flagged=any(categories.values()),
-            provider=self.provider_name,
-            raw_response=response,
             categories=categories,
             category_scores=category_scores
         )
+
 
     async def check_content(
         self, 
@@ -227,7 +187,7 @@ class OpenAIModerationProvider(IModerationProvider):
                     for result in valid_results:
                         merged_response["results"].extend(result["results"])
                     
-                    return self._process_api_response(merged_response, content)
+                    return self._process_api_response(merged_response, content, settings)
                 else:
                     raise ValueError("No valid frames could be processed")
             else:
@@ -237,11 +197,7 @@ class OpenAIModerationProvider(IModerationProvider):
                     raise ValueError("No valid input could be prepared")
                 response = await self._make_request(api_inputs)
                 
-                # 根据是否有配置文件, 进行返回
-                if settings:
-                    return self._process_api_response_with_settings(response, content, settings)
-                else:
-                    return self._process_api_response(response, content)
+                return self._process_api_response(response, content, settings)
             
         except Exception as e:
             raise ValueError(f"Moderation failed: {str(e)}")

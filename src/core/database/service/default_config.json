@@ -5,32 +5,32 @@
         "providers": {
           "openai": {
             "categories": {
-              "sexual/minors": true,
-              "harassment": true,
-              "harassment/threatening": true,
               "hate": true,
-              "hate/threatening": true,
               "illicit": true,
-              "illicit/violent": true,
-              "self-harm": true,
-              "self-harm/intent": true,
-              "self-harm/instructions": true,
               "violence": true,
-              "violence/graphic": true
+              "self-harm": true,
+              "harassment": true,
+              "sexual/minors": true,
+              "illicit/violent": true,
+              "hate/threatening": true,
+              "self-harm/intent": true,
+              "violence/graphic": true,
+              "harassment/threatening": true,
+              "self-harm/instructions": true
             },
             "sensitivity": {
-              "sexual/minors": 0.8,
-              "harassment": 0.8,
-              "harassment/threatening": 0.8,
               "hate": 0.8,
-              "hate/threatening": 0.8,
               "illicit": 0.8,
-              "illicit/violent": 0.8,
-              "self-harm": 0.8,
-              "self-harm/intent": 0.8,
-              "self-harm/instructions": 0.8,
               "violence": 0.8,
-              "violence/graphic": 0.8
+              "self-harm": 0.8,
+              "harassment": 0.8,
+              "sexual/minors": 0.8,
+              "illicit/violent": 0.8,
+              "hate/threatening": 0.8,
+              "self-harm/intent": 0.8,
+              "violence/graphic": 0.8,
+              "harassment/threatening": 0.8,
+              "self-harm/instructions": 0.8
             }
           }
         }
