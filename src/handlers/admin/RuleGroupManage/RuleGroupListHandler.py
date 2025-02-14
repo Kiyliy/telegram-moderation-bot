@@ -8,6 +8,13 @@ from src.core.database.service.RuleGroupService import RuleGroupService
 from src.core.database.service.chatsService import ChatService
 from src.core.database.models.db_rule_group import RuleGroup
 
+class RuleGroupListLayout:
+    """规则组列表布局"""
+    InlineKeyboardButton("<<GroupList>>", callback_data="admin:rg:.{16}(:menu)?")
+    InlineKeyboardButton("创建规则组 ➕", callback_data="admin:rg:create")
+    InlineKeyboardButton("查看规则组 📋", callback_data="admin:rg:list")
+    InlineKeyboardButton("« 返回", callback_data="admin")
+
 
 class RuleGroupListHandler(AdminBaseHandler):
     """规则组管理菜单处理器"""
