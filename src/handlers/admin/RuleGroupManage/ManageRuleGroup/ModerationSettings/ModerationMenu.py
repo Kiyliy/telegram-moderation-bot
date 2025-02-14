@@ -7,7 +7,7 @@ from src.core.database.service.RuleGroupConfig import rule_group_config
 from src.core.database.service.UserModerationConfigKeys import UserModerationConfigKeys as configkey
 from typing import Optional
 
-class MenuHandler(AdminBaseHandler):
+class ModerationMenuHandler(AdminBaseHandler):
     """规则组管理处理器"""
     
     def __init__(self):
@@ -41,4 +41,4 @@ class MenuHandler(AdminBaseHandler):
         )
 
 # 初始化处理器
-MenuHandler() 
+ModerationMenuHandler() 
