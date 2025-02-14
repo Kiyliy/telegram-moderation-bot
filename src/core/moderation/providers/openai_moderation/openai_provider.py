@@ -11,7 +11,7 @@ import cv2
 import asyncio
 import os
 from io import BytesIO
-from src.core.moderation.providers.openai_moderation.OpenaiCategoryTypes import OpenAISettings
+from src.core.moderation.providers.openai_moderation.OpenaiCategoryTypes import OpenAISettingsType
 
 class OpenAIModerationProvider(IModerationProvider):
     """OpenAI审核服务提供者"""
@@ -141,7 +141,7 @@ class OpenAIModerationProvider(IModerationProvider):
         self, 
         response: Dict, 
         input_data: ModerationInputContent,
-        settings: OpenAISettings
+        settings: OpenAISettingsType
     ) -> ModerationResult:
         """处理API响应
         
@@ -174,7 +174,7 @@ class OpenAIModerationProvider(IModerationProvider):
     async def check_content(
         self, 
         content: ModerationInputContent,
-        settings: Optional[OpenAISettings] = None 
+        settings: Optional[OpenAISettingsType] = None 
     ) -> ModerationResult:
         """审核内容"""
         temp_files = []  # 跟踪临时文件

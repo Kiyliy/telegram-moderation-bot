@@ -4,12 +4,24 @@ class UserModerationConfigKeys:
     """用户管理配置键"""
     class moderation:
         """审核规则配置"""
+
         PROVIDER_LIST: str = 'moderation.provider_list'
         ACTIVE_PROVIDER: str = 'moderation.active_provider'
     
+
+        class auto_actions:
+            """自动处理动作"""
+            DELETE_MESSAGE: str = 'moderation.auto_actions.delete_message'
+            WARN_USER: str = 'moderation.auto_actions.warn_user'
+            NOTIFY_ADMINS: str = 'moderation.auto_actions.notify_admins'
+    
+        PROVIDERS: str = 'moderation.providers'
         class providers:
             """审核提供者"""
+            OPENAI: str = 'moderation.providers.openai'
             class openai:
+                CATEGORIES: str = 'moderation.providers.openai.categories'
+                SENSITIVITY: str = 'moderation.providers.openai.sensitivity'
                 class categories:
                     SEXUAL_MINORS = "moderation.providers.openai.categories.sexual/minors"
                     HARASSMENT = "moderation.providers.openai.categories.harassment"
@@ -37,11 +49,7 @@ class UserModerationConfigKeys:
                     VIOLENCE = "moderation.providers.openai.sensitivity.violence"
                     VIOLENCE_GRAPHIC = "moderation.providers.openai.sensitivity.violence/graphic"
         
-        class auto_actions:
-            """自动处理动作"""
-            DELETE_MESSAGE: str = 'moderation.auto_actions.delete_message'
-            WARN_USER: str = 'moderation.auto_actions.warn_user'
-            NOTIFY_ADMINS: str = 'moderation.auto_actions.notify_admins'
+
     
     class warning_messages:
         """警告消息配置"""
