@@ -29,6 +29,7 @@ class UserModerationConfigKeys:
                 CATEGORIES: str = 'moderation.providers.openai.categories'
                 SENSITIVITY: str = 'moderation.providers.openai.sensitivity'
                 class categories:
+                    SEXUAL = "moderation.providers.openai.categories.sexual"
                     SEXUAL_MINORS = "moderation.providers.openai.categories.sexual/minors"
                     HARASSMENT = "moderation.providers.openai.categories.harassment"
                     HARASSMENT_THREATENING = "moderation.providers.openai.categories.harassment/threatening"
@@ -42,6 +43,7 @@ class UserModerationConfigKeys:
                     VIOLENCE = "moderation.providers.openai.categories.violence"
                     VIOLENCE_GRAPHIC = "moderation.providers.openai.categories.violence/graphic"
                 class sensitivity:
+                    SEXUAL = "moderation.providers.openai.sensitivity.sexual"
                     SEXUAL_MINORS = "moderation.providers.openai.sensitivity.sexual/minors"
                     HARASSMENT = "moderation.providers.openai.sensitivity.harassment"
                     HARASSMENT_THREATENING = "moderation.providers.openai.sensitivity.harassment/threatening"
