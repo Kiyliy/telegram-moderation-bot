@@ -29,7 +29,6 @@ class FullyMatchedDelayedLoggingSystem:
         # self.lock = asyncio.Lock()
         self.max_time_between_scans = 60  # 最长60秒必定扫描一次
         self.last_scan_time = time.time()
-        self.taskkeeper = TaskKeeper()
 
     async def create_log(
         self,
@@ -170,8 +169,7 @@ class FullyMatchedDelayedLoggingSystem:
 
             # 2. 创建相关任务
             if log_entries:
-                insert_log_task = asyncio.create_task(self.db.insert_logs(log_entries))
-                self.taskkeeper.add_task(insert_log_task)
+                TaskKeeper.create_task(self.db.insert_logs(log_entries))
 
             # 3. 删除缓存
             for session_id in session_ids:

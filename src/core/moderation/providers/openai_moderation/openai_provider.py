@@ -161,13 +161,9 @@ class OpenAIModerationProvider(IModerationProvider):
                 
                 # 创建并管理任务
                 tasks = [
-                    asyncio.create_task(process_single_frame(frame_path))
+                    TaskKeeper.create_task(process_single_frame(frame_path))
                     for frame_path in frame_paths
                 ]
-                
-                # 使用 TaskKeeper 管理任务, 避免被回收
-                for task in tasks:
-                    TaskKeeper.add_task(task)
                 
                 # 等待所有任务完成
                 all_results = await asyncio.gather(*tasks, return_exceptions=True)

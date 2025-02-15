@@ -5,7 +5,7 @@ from src.core.logger import logger
 import traceback
 from src.core.database.service.messageHistoryService import MessageHistoryService
 import time
-
+from src.core.tools.task_keeper import TaskKeeper
 
 class store_photos_service:
     msg_history_service = MessageHistoryService()
@@ -132,7 +132,7 @@ class store_photos_service:
                 if group_info["processing_task"]:
                     group_info["processing_task"].cancel()
 
-                group_info["processing_task"] = asyncio.create_task(
+                group_info["processing_task"] = TaskKeeper.create_task(
                     self.delayed_process_photo_group(
                         user_id, message.media_group_id, chat_id
                     )
