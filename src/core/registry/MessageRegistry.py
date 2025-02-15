@@ -75,7 +75,7 @@ class MessageRegistry:
         for filter_func, handler in cls._handlers:
             try:
                 if filter_func and filter_func(update):
-                    await handler(update, context)
+                    TaskKeeper.create_task(handler(update, context))
                     return
             except Exception as e:
                 print(f"Error in message handler: {e}, {traceback.format_exc()}")

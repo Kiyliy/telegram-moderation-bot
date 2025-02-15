@@ -3,7 +3,7 @@ from telegram.ext import ContextTypes
 import re
 from typing import Callable
 from src.core.registry.registry_base import Registry_Base
-
+from src.core.tools.task_keeper import TaskKeeper
 
 # 回调注册器
 class CallbackRegistry:
@@ -49,7 +49,7 @@ class CallbackRegistry:
         for pattern, handler in self._handlers:
             if pattern.match(data):
                 try:
-                    await handler(update, context)
+                    TaskKeeper.create_task(handler(update, context))
                 finally:
                     await query.answer()
                 return
