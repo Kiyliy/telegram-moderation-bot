@@ -61,8 +61,9 @@ class RuleGroupModerationConfigMiddleware(ModerationManager):
             configkey.moderation.other_config.SKIP_MANAGER
         )
         
-        # 如果skip_manager为True, 则不进行审核
-        if skip_manager:
+        # 如果skip_manager & is_manager, 则不进行审核
+        if skip_manager and is_manager:
+            print("[INFO] 跳过管理员审核")
             return ModerationResult(flagged=False)
         
         # 如果rule_group_id为空, 则使用默认的provider

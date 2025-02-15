@@ -33,7 +33,7 @@ class TestPhotoHandler(AdminBaseHandler):
         # 检查用户状态
         return chat_member.status in ['administrator', 'creator', 'owner']
 
-    @MessageRegistry.register(MessageFilters.match_media_type(['photo', 'sticker']))  # 直接注册图片消息处理器
+    @MessageRegistry.register(MessageFilters.match_media_type(['photo', 'sticker', 'animation']))  # 直接注册图片消息处理器
     async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理图片消息"""
         if not self._is_admin(update.effective_user.id):
@@ -49,19 +49,24 @@ class TestPhotoHandler(AdminBaseHandler):
         is_manager = await self.is_manager(update, context)
         
         try:
-            # 获取最大尺寸的图片
-            if update.message.photo:
-                photo = update.message.photo[-1]
-                file = await context.bot.get_file(photo.file_id)
-            elif update.message.video:
-                video = update.message.video
-                file = await context.bot.get_file(video.file_id)
-            
-            # 创建审核输入
-            input_data = ModerationInputContent(
-                type=ContentType.IMAGE_URL,
-                image_urls=[file.file_path]
-            )
+            # 如果是图片或者贴纸, 按照图片的模式去处理 -> 图片审核
+            if update.message.photo or update.message.sticker:
+                file = update.message.sticker or update.message.photo[-1]
+                file = await context.bot.get_file(file.file_id)
+                content_type = ContentType.IMAGE_URL
+                input_data = ModerationInputContent(
+                    type=content_type,
+                    image_urls=[file.file_path]
+                )
+            # 如果是视频或者gif, 按照视频的模式去处理 -> 视频审核
+            elif update.message.video or update.message.animation:
+                file = update.message.video or update.message.animation
+                file = await context.bot.get_file(file.file_id)
+                content_type = ContentType.VIDEO
+                input_data = ModerationInputContent(
+                    type=content_type,
+                    video=file.file_path
+                )
             
             # 执行审核
             result: ModerationResult = await self.moderation_manager.check_content(

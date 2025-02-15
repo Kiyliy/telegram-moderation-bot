@@ -82,7 +82,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
             await update.message.reply_text(
                 "❌ 创建失败，请重试",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("返回", callback_data="admin:rule_group")
+                    InlineKeyboardButton("返回", callback_data="admin:rg:menu")
                 ]])
             )
 
@@ -118,7 +118,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
             await query.edit_message_text(
                 "❌ 创建失败，请重试",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("返回", callback_data="admin:rule_group")
+                    InlineKeyboardButton("返回", callback_data="admin:rg:menu")
                 ]])
             )
 
@@ -133,7 +133,7 @@ class CreateRuleGroupHandler(AdminBaseHandler):
         await query.edit_message_text(
             "❌ 已取消创建规则组",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("返回", callback_data="admin:rule_group")
+                InlineKeyboardButton("返回", callback_data="admin:rg:menu")
             ]])
         )
 

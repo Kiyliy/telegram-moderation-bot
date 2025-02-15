@@ -88,7 +88,7 @@ class RuleGroupListHandler(AdminBaseHandler):
         return InlineKeyboardMarkup(keyboard)
 
 
-    @CallbackRegistry.register(r"^admin:rg:list?(?::(\d+))?$")
+    @CallbackRegistry.register(r"^admin:rg((:list)|(:menu))?(?::(\d+))?$")
     async def handle_list_rule_groups(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理查看规则组列表"""
         query = update.callback_query
