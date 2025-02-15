@@ -33,7 +33,7 @@ class TestPhotoHandler(AdminBaseHandler):
         # 检查用户状态
         return chat_member.status in ['administrator', 'creator', 'owner']
 
-    @MessageRegistry.register(MessageFilters.match_media_type(['photo']))  # 直接注册图片消息处理器
+    @MessageRegistry.register(MessageFilters.match_media_type(['photo', 'sticker']))  # 直接注册图片消息处理器
     async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理图片消息"""
         if not self._is_admin(update.effective_user.id):

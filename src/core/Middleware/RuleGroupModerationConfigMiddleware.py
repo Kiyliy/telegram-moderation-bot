@@ -58,7 +58,7 @@ class RuleGroupModerationConfigMiddleware(ModerationManager):
         # 获取是否跳过管理员
         skip_manager = await rule_group_config.get_config(
             rule_group_id,
-            configkey.moderation.SKIP_MANAGER
+            configkey.moderation.other_config.SKIP_MANAGER
         )
         
         # 如果skip_manager为True, 则不进行审核

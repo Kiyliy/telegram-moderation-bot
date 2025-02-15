@@ -2,7 +2,9 @@
     "moderation": {
         "provider_list": ["openai", "other_provider"],
         "active_provider": "openai",
-        "skip_manager": true,
+        "other_config": {
+            "skip_manager": true
+        },
         "providers": {
           "openai": {
             "categories": {

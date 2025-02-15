@@ -7,8 +7,14 @@ class UserModerationConfigKeys:
 
         PROVIDER_LIST: str = 'moderation.provider_list'
         ACTIVE_PROVIDER: str = 'moderation.active_provider'
-        SKIP_MANAGER: str = 'moderation.skip_manager'
+        
+        # 其他配置
+        OTHER_CONFIG: str = 'moderation.other_config'
+        class other_config:
+            SKIP_MANAGER: str = 'moderation.other_config.skip_manager'
 
+        # 自动处理动作
+        AUTO_ACTIONS: str = 'moderation.auto_actions'
         class auto_actions:
             """自动处理动作"""
             DELETE_MESSAGE: str = 'moderation.auto_actions.delete_message'
