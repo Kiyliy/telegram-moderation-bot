@@ -3,6 +3,7 @@ from typing import Dict, TypedDict, Optional, Union
 
 class OpenAIModerationCategory(str, Enum):
     """OpenAI支持的审核类别"""
+    SEXUAL = "sexual"
     SEXUAL_MINORS = "sexual/minors"
     HARASSMENT = "harassment" 
     HARASSMENT_THREATENING = "harassment/threatening"
